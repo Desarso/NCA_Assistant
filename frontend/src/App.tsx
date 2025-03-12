@@ -7,19 +7,17 @@ import "./index.css";
 import Layout from "./layout";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./lib/auth-context";
-import { SplashScreen } from "./components/splash-screen";
 import { useEffect, useState } from "react";
-import { useIsMobile } from "./hooks/use-mobile";
 
 function AppRoutes() {
   // const { setBiometricVerified } = useAuth();
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile();
   const [showSplash, setShowSplash] = useState(true);
   
-  // Show splash screen only on standalone mode (when installed)
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      (window.navigator as any).standalone || 
-                      document.referrer.includes('android-app://');
+  // // Show splash screen only on standalone mode (when installed)
+  // const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+  //                     (window.navigator as any).standalone || 
+  //                     document.referrer.includes('android-app://');
 
   // Hide splash screen after delay
   useEffect(() => {
@@ -39,15 +37,6 @@ function AppRoutes() {
 
   return (
     <>
-      {/* Only show splash screen on mobile when running as installed app */}
-      {isMobile && isStandalone && showSplash && (
-        <SplashScreen />
-      )}
-      
-      {/* <BiometricAuthModal /> */}
-      
-      {/* Don't render routes until splash is done on installed app */}
-      {(!isMobile || !isStandalone || !showSplash) && (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/request-whitelist" element={<RequestWhitelist />} />
@@ -82,7 +71,6 @@ function AppRoutes() {
             } 
           />
         </Routes>
-      )}
     </>
   );
 }

@@ -11,13 +11,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'offline.html', 'pwa-192x192.png', 'pwa-512x512.png', 'icons/apple-touch-icon.png', 'icons/mask-icon.svg'],
-      manifest: false, // Use the manifest.json file in public directory
-      strategies: 'generateSW',
+      // includeAssets: ['favicon.ico', 'offline.html', 'pwa-192x192.png', 'pwa-512x512.png', 'icons/apple-touch-icon.png', 'icons/mask-icon.svg'],
+      // manifest: false, // Use the manifest.json file in public directory
+      // strategies: 'generateSW',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        navigateFallback: null,
-        navigateFallbackDenylist: [/^\/(api|admin)/],
+        // globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // navigateFallback: null,
+        // navigateFallbackDenylist: [/^\/(api|admin)/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -46,7 +46,35 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
-          }
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24, // Cache pages for 1 day
+              },
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: {
+                maxEntries: 20,
+              },
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === 'script' || request.destination === 'style',
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-assets',
+            },
+          },
         ]
       }
     })
