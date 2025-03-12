@@ -7,10 +7,8 @@ import "./index.css";
 import Layout from "./layout";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./lib/auth-context";
-import { BiometricAuthModal } from "./components/biometric-auth-modal";
 import { SplashScreen } from "./components/splash-screen";
 import { useEffect, useState } from "react";
-import { useAuth } from "./lib/auth-context";
 import { useIsMobile } from "./hooks/use-mobile";
 
 function AppRoutes() {
