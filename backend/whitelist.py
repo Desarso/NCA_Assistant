@@ -12,8 +12,8 @@ def whitelist_user(uid: str) -> None:
     try:
         # Initialize Firebase Admin SDK if not already initialized
         if not firebase_admin._apps:
-            # You'll need to replace this path with your service account key file
-            cred = credentials.Certificate("./firebase/nca-it-assistant-firebase-adminsdk-fbsvc-f5ca73175b.json")
+            from firebase.firebase_credentials import get_firebase_credentials
+            cred = credentials.Certificate(get_firebase_credentials())
             firebase_admin.initialize_app(cred)
 
         # Set the custom claim
@@ -33,8 +33,8 @@ def unwhitelist_user(uid: str) -> None:
     try:
         # Initialize Firebase Admin SDK if not already initialized
         if not firebase_admin._apps:
-            # You'll need to replace this path with your service account key file
-            cred = credentials.Certificate("./firebase/nca-it-assistant-firebase-adminsdk-fbsvc-f5ca73175b.json")
+            from firebase.firebase_credentials import get_firebase_credentials
+            cred = credentials.Certificate(get_firebase_credentials())
             firebase_admin.initialize_app(cred)
 
         # Remove the custom claim by setting it to False

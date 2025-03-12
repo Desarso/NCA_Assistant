@@ -84,7 +84,8 @@ async def lifespan(app: fastapi.FastAPI):
     
     # Initialize Firebase Admin SDK if not already initialized
     if not firebase_admin._apps:
-        cred = credentials.Certificate("./firebase/nca-it-assistant-firebase-adminsdk-fbsvc-f5ca73175b.json")
+        from firebase.firebase_credentials import get_firebase_credentials
+        cred = credentials.Certificate(get_firebase_credentials())
         firebase_admin.initialize_app(cred)
     
     yield
