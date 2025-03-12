@@ -1,4 +1,5 @@
-FROM debian:slim
+FROM debian:bullseye-slim
+
 
 WORKDIR /app
 
