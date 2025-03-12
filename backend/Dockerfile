@@ -1,19 +1,15 @@
-FROM debian:bullseye-slim
+FROM ghcr.io/astral-sh/uv:debian-slim
 
 
+# RUN apt-get install -y  curl
+# Set working directory
 WORKDIR /app
 
-# Install only curl
-RUN apt-get update && apt-get install -y curl
-
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Copy application files
+# Copy requirements file
 COPY . .
 
-# Set environment variables
-ENV PATH="/root/.cargo/bin:${PATH}"
+EXPOSE 8000
+
 
 # Run the application
 CMD ["uv", "run", "index.py"]
