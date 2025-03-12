@@ -14,7 +14,7 @@ import { useAuth } from "./lib/auth-context";
 import { useIsMobile } from "./hooks/use-mobile";
 
 function AppRoutes() {
-  const { setBiometricVerified } = useAuth();
+  // const { setBiometricVerified } = useAuth();
   const isMobile = useIsMobile();
   const [showSplash, setShowSplash] = useState(true);
   
@@ -46,7 +46,7 @@ function AppRoutes() {
         <SplashScreen />
       )}
       
-      <BiometricAuthModal />
+      {/* <BiometricAuthModal /> */}
       
       {/* Don't render routes until splash is done on installed app */}
       {(!isMobile || !isStandalone || !showSplash) && (
