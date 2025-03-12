@@ -53,15 +53,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
     
   return (
-    <SidebarProvider>
+    <SidebarProvider
+    >
       <AppSidebar 
         chats={chats}
       />
       <main className="flex flex-col h-screen w-full">
         <div className="flex items-center justify-between p-2 bg-gray-200 dark:bg-gray-700">
-          <div className="flex items-center">
-            <SidebarTrigger />
-            <h1 className="text-xl font-semibold ml-2 text-gray-800 dark:text-gray-200">NCA Assistant</h1>
+          <div className="flex items-center h-18 w-full md:h-[28px]">
+            <SidebarTrigger
+              className="h-15 w-15
+              [&_svg:not([class*='size-'])]:size-10!
+              md:[&_svg:not([class*='size-'])]:size-5!
+              "
+            >
+            </SidebarTrigger>
+            <h1 className="text-3xl! 
+            
+            md:text-base! font-semibold ml-2 text-gray-800 dark:text-gray-200">NCA Assistant</h1>
           </div>
           {isMobile && <PWAInstallButton className="ml-auto" />}
         </div>

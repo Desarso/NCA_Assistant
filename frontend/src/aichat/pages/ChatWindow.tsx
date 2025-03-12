@@ -371,14 +371,16 @@ function ChatWindow({ id }: { id?: string }) {
   };
 
   return (
-    <div className="Chat-Container h-full w-full relative flex align-center justify-center chatMessages max-h-[calc(100vh-44px)]">
+    <div className="Chat-Container h-full w-full relative flex align-center justify-center chatMessages max-h-[calc(100vh-88px)]
+      md:max-h-[calc(100vh-44px)]
+    ">
       <div className="chat-window">
         {isListening ? (
           // <AudioCircle onClose={() => setIsListening(false)} />
           <></>
         ) : (
           <>
-            <div className="chat-messages">
+            <div className="chat-messages text-xl! md:text-base!">
               {messages.map((message, index) => (
                 message.role === 'user' || message.role === 'assistant' ? (
                   <div key={index} className={`message ${message.role}`}>
@@ -400,6 +402,9 @@ function ChatWindow({ id }: { id?: string }) {
             </div>
             <form onSubmit={handleSubmit} className="chat-input">
               <input
+                className="text-xl!
+                md:text-base!
+                "
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
