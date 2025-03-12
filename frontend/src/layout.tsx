@@ -33,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        const response = await authFetch(`${HOST}users/${user.uid}/conversations`);
+        const response = await authFetch(`${HOST}/users/${user.uid}/conversations`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
