@@ -34,10 +34,10 @@ function AppRoutes() {
   }, [showSplash]);
 
   // Listen for app visibility changes to trigger biometric auth
-  useEffect(() => {
-      // App was hidden and is now visible again, require biometric auth
-      setBiometricVerified(false);
-  }, []);
+  // useEffect(() => {
+  //     // App was hidden and is now visible again, require biometric auth
+  //     setBiometricVerified(false);
+  // }, []);
 
   return (
     <>
