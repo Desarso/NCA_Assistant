@@ -4,7 +4,7 @@ from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
 from sqlalchemy import String, Column
 
 # Define the database URL
-DATABASE_URL = "sqlite:///./chat_history.sqlite"
+DATABASE_URL = "sqlite:///./db/chat_history.sqlite"
 
 # Create models matching your frontend Prisma schema
 class User(SQLModel, table=True):
