@@ -45,7 +45,7 @@ from helpers.models import create_db_and_tables, get_session, User, Conversation
 THIS_DIR = Path(__file__).parent
 # Create an instance of your tools
 
-PRISM_COMPONENTS_DIR = Path("./node_modules/prismjs/components")  # Relative
+PRISM_COMPONENTS_DIR = Path("./prismjs/components")  # Relative
 # Validate that the directory exists when the app starts.  Important!
 if not PRISM_COMPONENTS_DIR.is_dir():
     raise ValueError(f"Prism components directory not found: {PRISM_COMPONENTS_DIR}")

@@ -15,6 +15,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     user_id: number;
   }
 
+  const HOST = import.meta.env.VITE_CHAT_HOST;
+
   const [chats, setChats] = useState<{id: string, title: string}[]>([]);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        const response = await authFetch(`http://localhost:8000/users/${user.uid}/conversations`);
+        const response = await authFetch(`${HOST}users/${user.uid}/conversations`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

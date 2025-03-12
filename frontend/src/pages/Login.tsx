@@ -9,36 +9,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setError('');
-  //   setLoading(true);
-
-  //   try {
-  //     await signInWithEmailAndPassword(auth, email, password);
-  //     navigate('/');
-  //   } catch (error: any) {
-  //     setError(error.message || 'Failed to sign in');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const handleGoogleLogin = async () => {
-  //   setError('');
-  //   setLoading(true);
-    
-  //   try {
-  //     const provider = new GoogleAuthProvider();
-  //     await signInWithPopup(auth, provider);
-  //     navigate('/');
-  //   } catch (error: any) {
-  //     setError(error.message || 'Failed to sign in with Google');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleMicrosoftLogin = async () => {
     setError('');
     setLoading(true);
