@@ -1,8 +1,10 @@
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth, signOut } from '@/lib/firebase';
 
 const SettingsPage = () => {
   const HOST = import.meta.env.VITE_CHAT_HOST;
+  const navigate = useNavigate();
 
   const handleClearMemories = async () => {
     const url = new URL(`${HOST}/chat/history`);
@@ -26,6 +28,16 @@ const SettingsPage = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+      alert('Failed to log out.');
+    }
+  };
+
   return (
     <div className="bg-gray-900 min-h-screen">
       <div className="bg-gray-800 p-8 rounded-lg shadow-md w-screen h-screen">
@@ -44,6 +56,12 @@ const SettingsPage = () => {
           onClick={handleClearMemories}
         >
           Clear Memories
+        </button>
+        <button
+          className="mt-4 ml-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
+          onClick={handleLogout}
+        >
+          Log Out
         </button>
       </div>
     </div>

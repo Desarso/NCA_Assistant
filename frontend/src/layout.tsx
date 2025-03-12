@@ -1,9 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/app-sidebar";
+import { PWAInstallButton } from "./components/pwa-install-button";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "./hooks/use-mobile";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-
+  const isMobile = useIsMobile();
 
   interface Conversation {
     id: number;
@@ -18,7 +20,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const response = await fetch('http://localhost:8000/users/1/conversations');
+        // Import here to avoid circular dependency
+        const { authFetch } = await import('@/lib/utils');
+        const { auth } = await import('@/lib/firebase');
+        
+        // Get current user UID
+        const user = auth.currentUser;
+        if (!user) {
+          console.error('User not authenticated');
+          return;
+        }
+        
+        const response = await authFetch(`http://localhost:8000/users/${user.uid}/conversations`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -36,8 +49,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     fetchConversations();
   }, []);
-
-
     
   return (
     <SidebarProvider>
@@ -45,11 +56,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         chats={chats}
       />
       <main className="flex flex-col h-screen w-full">
-        <div className="flex items-center p-2 bg-gray-200 dark:bg-gray-700">
-          <SidebarTrigger />
-          <div>
-          <h1 className="text-xl font-semibold ml-2 text-gray-800 dark:text-gray-200">NCA Assistant</h1>
+        <div className="flex items-center justify-between p-2 bg-gray-200 dark:bg-gray-700">
+          <div className="flex items-center">
+            <SidebarTrigger />
+            <h1 className="text-xl font-semibold ml-2 text-gray-800 dark:text-gray-200">NCA Assistant</h1>
           </div>
+          {isMobile && <PWAInstallButton className="ml-auto" />}
         </div>
         {children}
       </main>

@@ -15,4 +15,5 @@ dependencies = [
     "requests>=2.32.3",
     "uvicorn>=0.34.0",
     "sqlmodel>=0.0.16",
+    "firebase-admin>=6.6.0",
 ]

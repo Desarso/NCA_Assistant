@@ -1,9 +1,5 @@
 import {
-  Calendar,
-  Home,
-  Inbox,
   MessageSquare,
-  Search,
   Settings,
 } from "lucide-react";
 

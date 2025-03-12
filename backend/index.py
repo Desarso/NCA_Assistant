@@ -1,13 +1,17 @@
 from __future__ import annotations as _annotations
 from pathlib import Path
 from fastapi.responses import StreamingResponse
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Security
 from typing import AsyncGenerator, Union
 from fastapi import Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.openapi.docs import get_swagger_ui_html
 import fastapi
 import json
+import firebase_admin
+from firebase_admin import credentials, auth
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
@@ -26,6 +30,8 @@ from pydantic_ai.messages import (
     TextPart,
     ModelRequest,
     ModelResponse,
+    ToolReturnPart,
+    RetryPromptPart,
 )
 from sqlmodel import Session
 from contextlib import asynccontextmanager
@@ -75,20 +81,96 @@ async def gemini(prompt: str) -> str:
 async def lifespan(app: fastapi.FastAPI):
     # Initialize database on startup
     create_db_and_tables()
+    
+    # Initialize Firebase Admin SDK if not already initialized
+    if not firebase_admin._apps:
+        cred = credentials.Certificate("./firebase/nca-it-assistant-firebase-adminsdk-fbsvc-f5ca73175b.json")
+        firebase_admin.initialize_app(cred)
+    
     yield
     # Clean up resources if needed
 
 
-app = fastapi.FastAPI(lifespan=lifespan)
+app = fastapi.FastAPI(
+    lifespan=lifespan,
+    title="Microsoft API Backend",
+    description="API for Microsoft AI Services with Firebase authentication",
+    version="1.0.0",
+    docs_url=None,
+    redoc_url=None
+)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow your frontend origin
+    allow_origins=[os.getenv("FRONTEND_URL")],  # Get frontend URL from env
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
 )
+
+# Firebase auth bearer for API endpoints
+security = HTTPBearer()
+
+# OAuth2 password bearer for Swagger UI
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+
+class FirebaseUser:
+    def __init__(self, uid: str, email: str, whitelisted: bool = False):
+        self.uid = uid
+        self.email = email
+        self.whitelisted = whitelisted
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class UserCredentials(BaseModel):
+    email: str
+    password: str
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> FirebaseUser:
+    """
+    Validate Firebase ID token and verify the user is whitelisted
+    """
+    try:
+        # The token comes in the format "Bearer <token>"
+        token = credentials.credentials
+        # Verify the token with Firebase Admin SDK
+        decoded_token = auth.verify_id_token(token)
+        
+        # Get user claims to check if whitelisted
+        uid = decoded_token['uid']
+        user = auth.get_user(uid)
+        
+        # Check email
+        email = user.email if user.email else decoded_token.get('email', '')
+        
+        # Get custom claims
+        custom_claims = user.custom_claims or {}
+        whitelisted = custom_claims.get('whitelisted', False)
+        
+        # Create user object
+        firebase_user = FirebaseUser(uid=uid, email=email, whitelisted=whitelisted)
+        
+        # Check if the user is whitelisted
+        if not firebase_user.whitelisted:
+            raise HTTPException(
+                status_code=403,
+                detail="User is not authorized to access this resource. Contact administrator for whitelist access."
+            )
+            
+        return firebase_user
+        
+    except auth.ExpiredIdTokenError:
+        raise HTTPException(status_code=401, detail="Firebase ID token has expired. Please sign in again.")
+    except auth.InvalidIdTokenError:
+        raise HTTPException(status_code=401, detail="Invalid Firebase ID token. Please sign in again.")
+    except auth.RevokedIdTokenError:
+        raise HTTPException(status_code=401, detail="Firebase ID token has been revoked. Please sign in again.")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Failed to validate Firebase ID token: {str(e)}")
 
 class ChatMessage(BaseModel):
     role: str
@@ -154,16 +236,30 @@ def event_from_json_string(json_str):
             event_kind=event_data["event_kind"]
         )
     elif data['type'] == 'tool_result':
-        return FunctionToolResultEvent(
-            result=ToolResult(
-                tool_name=event_data["tool_result"]["name"],
-                content=event_data["tool_result"]["content"],
-                tool_call_id=event_data["tool_result"]["tool_call_id"],
-                timestamp=datetime.fromisoformat(event_data["tool_result"]["timestamp"])
-            ),
-            tool_call_id=event_data["tool_call_id"],
-            event_kind=event_data["event_kind"]
-        )
+        tool_result = event_data["tool_result"]
+        if "content" in tool_result:
+            return FunctionToolResultEvent(
+                result=ToolReturnPart(
+                    tool_name=tool_result["name"],
+                    content=tool_result["content"],
+                    tool_call_id=tool_result["tool_call_id"]
+                ),
+                tool_call_id=event_data["tool_call_id"],
+                event_kind=event_data["event_kind"]
+            )
+        elif "retry_prompt" in tool_result:
+            # Handle retry prompt case
+            return FunctionToolResultEvent(
+                result=RetryPromptPart(
+                    content=tool_result["retry_prompt"],
+                    tool_call_id=tool_result["tool_call_id"]
+                ),
+                tool_call_id=event_data["tool_call_id"],
+                event_kind=event_data["event_kind"]
+            )
+        else:
+            print(f"Unknown tool result format: {tool_result}")
+            return None
     return None
 
 def event_to_dict(event):
@@ -311,7 +407,12 @@ def get_message_history(conversation: Conversation) -> List[ModelMessage]:
     return message_history
 
 @app.post("/chat")
-async def chat(prompt: str, conversation_id: str, session: Session = Depends(get_session)):
+async def chat(
+    prompt: str, 
+    conversation_id: str, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
     """
     Endpoint to initiate a chat session and stream the response.
     
@@ -319,10 +420,21 @@ async def chat(prompt: str, conversation_id: str, session: Session = Depends(get
     # Get or create conversation
     conversation = session.get(Conversation, conversation_id)
     if not conversation:
+        # Check if user exists in the database, create if not
+        user = session.get(User, current_user.uid)
+        if not user:
+            user = User(
+                id=current_user.uid,
+                email=current_user.email,
+                name=current_user.email.split('@')[0] if current_user.email else None
+            )
+            session.add(user)
+            session.commit()
+            
         conversation = Conversation(
             id=conversation_id,
             title=await gemini(prompt),  # Generate title using Gemini
-            user_id=1  # You might want to get this from auth context
+            user_id=current_user.uid
         )
         session.add(conversation)
         session.commit()
@@ -396,6 +508,7 @@ async def get_prism_language(
         title="Language Name",
         description="The name of the Prism.js language component to retrieve.",
     ),
+    current_user: FirebaseUser = Depends(get_current_user)
 ):
     """
     Serves Prism.js language components.  Only serves minified .min.js files
@@ -444,31 +557,39 @@ class UserCreate(BaseModel):
 
 class ConversationCreate(BaseModel):
     title: str
-    user_id: int
+    user_id: str
 
 class MessageCreate(BaseModel):
     content: str
     is_user_message: bool = True
-    conversation_id: int
+    conversation_id: str
 
-# Database API endpoints
-@app.post("/users/", response_model=dict)
-def create_user(user: UserCreate, session: Session = Depends(get_session)):
-    db_user = User(email=user.email, name=user.name)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-    return {"status": "success", "user": db_user}
 
 @app.get("/users/{user_id}", response_model=dict)
-def read_user(user_id: int, session: Session = Depends(get_session)):
+def read_user(
+    user_id: str, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
+    # Users can only access their own information
+    if user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only view your own user data")
+        
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"status": "success", "user": user}
 
 @app.post("/conversations/", response_model=dict)
-def create_conversation(conversation: ConversationCreate, session: Session = Depends(get_session)):
+def create_conversation(
+    conversation: ConversationCreate, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
+    # Users can only create conversations for themselves
+    if conversation.user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only create conversations for yourself")
+        
     user = session.get(User, conversation.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -480,24 +601,49 @@ def create_conversation(conversation: ConversationCreate, session: Session = Dep
     return {"status": "success", "conversation": db_conversation}
 
 @app.get("/conversations/{conversation_id}", response_model=dict)
-def read_conversation(conversation_id: str, session: Session = Depends(get_session)):
+def read_conversation(
+    conversation_id: str, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
     conversation = session.get(Conversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
+        
+    # Users can only access their own conversations
+    if conversation.user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only view your own conversations")
+        
     return {"status": "success", "conversation": conversation}
 
 @app.get("/users/{user_id}/conversations", response_model=dict)
-def read_user_conversations(user_id: int, session: Session = Depends(get_session)):
+def read_user_conversations(
+    user_id: str, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
+    # Users can only access their own conversations
+    if user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only view your own conversations")
+        
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"status": "success", "conversations": user.conversations}
 
 @app.post("/messages/", response_model=dict)
-def create_message(message: MessageCreate, session: Session = Depends(get_session)):
+def create_message(
+    message: MessageCreate, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
     conversation = session.get(Conversation, message.conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
+        
+    # Users can only add messages to their own conversations
+    if conversation.user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only add messages to your own conversations")
     
     db_message = DBMessage(
         content=message.content,
@@ -510,13 +656,97 @@ def create_message(message: MessageCreate, session: Session = Depends(get_sessio
     return {"status": "success", "message": db_message}
 
 @app.get("/conversations/{conversation_id}/messages", response_model=dict)
-def read_conversation_messages(conversation_id: str, session: Session = Depends(get_session)):
+def read_conversation_messages(
+    conversation_id: str, 
+    session: Session = Depends(get_session),
+    current_user: FirebaseUser = Depends(get_current_user)
+):
     conversation = session.get(Conversation, conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
+        
+    # Users can only view messages from their own conversations
+    if conversation.user_id != current_user.uid:
+        raise HTTPException(status_code=403, detail="Access denied: You can only view messages from your own conversations")
+        
     return {"status": "success", "messages": conversation.messages}
 
+# Custom Swagger UI routes
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css",
+    )
 
+
+@app.post("/auth/login", response_model=Token, tags=["authentication"])
+async def login_for_access_token(credentials: UserCredentials):
+    """
+    Login with email/password to get a Firebase token for API access
+    
+    This endpoint is primarily for testing in Swagger UI.
+    """
+    try:
+        # Sign in with Firebase Auth
+        user = auth.get_user_by_email(credentials.email)
+        
+        # Create a custom token
+        custom_token = auth.create_custom_token(user.uid)
+        
+        # In a real application, you would exchange this for an ID token
+        # Here we're using it directly for simplicity in Swagger UI testing
+        
+        return {
+            "access_token": custom_token.decode('utf-8') if isinstance(custom_token, bytes) else custom_token,
+            "token_type": "bearer"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Authentication failed: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@app.post("/auth/token", response_model=Token, tags=["authentication"])
+async def login_oauth(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    OAuth2 compatible token endpoint for Swagger UI
+    """
+    try:
+        # Sign in with Firebase Auth
+        user = auth.get_user_by_email(form_data.username)  # Using username field for email
+        
+        # Create a custom token
+        custom_token = auth.create_custom_token(user.uid)
+        
+        return {
+            "access_token": custom_token.decode('utf-8') if isinstance(custom_token, bytes) else custom_token,
+            "token_type": "bearer"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Authentication failed: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@app.get("/auth/me", response_model=dict, tags=["authentication"])
+async def get_current_user_info(current_user: FirebaseUser = Depends(get_current_user)):
+    """
+    Return information about the currently authenticated user
+    """
+    return {
+        "status": "success",
+        "user": {
+            "uid": current_user.uid,
+            "email": current_user.email,
+            "whitelisted": current_user.whitelisted
+        }
+    }
 
 
 if __name__ == "__main__":

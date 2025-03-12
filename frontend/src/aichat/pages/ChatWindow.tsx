@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, FormEvent } from 'react';
+import { useState, useRef, useEffect, FormEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Link } from 'react-router-dom';
 import WaveIcon from './WaveIcon';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -53,7 +52,10 @@ const loadLanguage = async (language: string) => {
       }
     }
 
-    const response = await fetch(`${HOST}/api/prism-language?name=${language}`);
+    // Import authFetch to add auth token to the request
+    const { authFetch } = await import('@/lib/utils');
+    
+    const response = await authFetch(`${HOST}/api/prism-language?name=${language}`);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch language "${language}": ${response.status}`,
@@ -195,22 +197,8 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
 }
 
 
-interface ChatHistory {
-  store: Record<string, ChatMessage[]>;
-  class_name: string;
-}
 
-interface Chat {
-  chat_id: string;
-  collection: string;
-  chat_history: ChatHistory;
-}
 
-interface Props {
-  userId: string;
-  chats: Chat[];
-  selectedChat: string;
-}
 
 function ChatWindow({ id }: { id?: string }) {
   const [gettingResponse, setGettingResponse] = useState<boolean>(false);
@@ -218,7 +206,7 @@ function ChatWindow({ id }: { id?: string }) {
   const [input, setInput] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [conversationId, setConversationId] = useState<string>(id || crypto.randomUUID().toString());
+  const [conversationId, _] = useState<string>(id || crypto.randomUUID().toString());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -271,7 +259,10 @@ function ChatWindow({ id }: { id?: string }) {
         url.searchParams.append('conversation_id', conversationId);
 
         try {
-            const response = await fetch(url, {
+            // Import authFetch to add auth token to the request
+            const { authFetch } = await import('@/lib/utils');
+            
+            const response = await authFetch(url.toString(), {
                 method: 'POST',
                 headers: {
                     'Accept': 'text/event-stream',
@@ -342,7 +333,10 @@ function ChatWindow({ id }: { id?: string }) {
   const fetchMessageHistory = async () => {
     const url = new URL(`${HOST}/conversations/${conversationId}/messages`);
     try {
-      const response = await fetch(url, {
+      // Import here to avoid circular dependency
+      const { authFetch } = await import('@/lib/utils');
+      
+      const response = await authFetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -377,7 +371,7 @@ function ChatWindow({ id }: { id?: string }) {
   };
 
   return (
-    <div className="Chat-Container h-full w-full relative flex align-center justify-center chatMessages">
+    <div className="Chat-Container h-full w-full relative flex align-center justify-center chatMessages max-h-[calc(100vh-44px)]">
       <div className="chat-window">
         {isListening ? (
           // <AudioCircle onClose={() => setIsListening(false)} />
