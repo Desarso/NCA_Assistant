@@ -1,19 +1,6 @@
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.gemini import GeminiModel
 from pydantic_ai.providers.google_gla import GoogleGLAProvider
-from pydantic_ai.messages import (
-    FinalResultEvent,
-    FunctionToolCallEvent,
-    FunctionToolResultEvent,
-    PartDeltaEvent,
-    PartStartEvent,
-    TextPartDelta,
-    ToolCallPartDelta,
-    UserPromptPart,
-    ModelMessage,
-    TextPart,
-)
-from typing import AsyncGenerator
 import os
 import logging
 # from pydantic_ai import agent_tool # Assuming you'll use agent_tool later, but not crucial for this core logic.
@@ -26,7 +13,6 @@ from typing import Tuple, Optional, Dict, Any, List
 import sys
 import subprocess
 import tempfile
-import shutil
 from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 
 load_dotenv()
