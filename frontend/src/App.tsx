@@ -10,12 +10,10 @@ import { AuthProvider } from "./lib/auth-context";
 import { BiometricAuthModal } from "./components/biometric-auth-modal";
 import { SplashScreen } from "./components/splash-screen";
 import { useEffect, useState } from "react";
-import { useAppVisibility } from "./hooks/use-app-visibility";
 import { useAuth } from "./lib/auth-context";
 import { useIsMobile } from "./hooks/use-mobile";
 
 function AppRoutes() {
-  const { wasHidden, resetVisibility } = useAppVisibility();
   const { setBiometricVerified } = useAuth();
   const isMobile = useIsMobile();
   const [showSplash, setShowSplash] = useState(true);
@@ -37,12 +35,9 @@ function AppRoutes() {
 
   // Listen for app visibility changes to trigger biometric auth
   useEffect(() => {
-    if (wasHidden) {
       // App was hidden and is now visible again, require biometric auth
       setBiometricVerified(false);
-      resetVisibility();
-    }
-  }, [wasHidden, setBiometricVerified, resetVisibility]);
+  }, []);
 
   return (
     <>
