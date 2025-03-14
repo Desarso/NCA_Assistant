@@ -40,6 +40,10 @@ import os
 
 from helpers.Manager import agent
 from helpers.models import create_db_and_tables, get_session, User, Conversation, Message as DBMessage
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 
 THIS_DIR = Path(__file__).parent
@@ -101,6 +105,7 @@ app = fastapi.FastAPI(
     redoc_url=None
 )
 
+print(os.getenv("FRONTEND_URL"))
 
 app.add_middleware(
     CORSMiddleware,
