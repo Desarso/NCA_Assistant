@@ -1,0 +1,326 @@
+from pydantic_ai import RunContext
+import logging
+# from pydantic_ai import agent_tool # Assuming you'll use agent_tool later, but not crucial for this core logic.
+from typing import Tuple, Optional, Dict, Any, List
+from helpers.RequestHelper import make_request
+from helpers.assistant_functions.team_functions import list_users_joined_team
+from helpers.assistant_functions.channel_functions import list_channels
+
+
+## ✅ 1. Create a user
+def create_user(ctx: RunContext, display_name:str, user_principal_name:str, password:str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Creates a new user in Microsoft Azure AD.
+
+    Args:
+        display_name (str): The display name for the new user
+        user_principal_name (str): The user principal name (email format) for the new user
+        password (str): The initial password for the new user
+
+    Returns:
+        tuple: (response_data, error) where response_data contains the created user details if successful,
+        or None and error details if failed
+    """
+    url = "https://graph.microsoft.com/v1.0/users"
+    payload = {
+        "accountEnabled": True,
+        "displayName": display_name,
+        "mailNickname": user_principal_name.split('@')[0],
+        "userPrincipalName": user_principal_name,
+        "passwordProfile": {
+            "forceChangePasswordNextSignIn": True,
+            "password": password
+        }
+    }
+    response, error = make_request("POST", url, json_data=payload)
+    if error:
+        logging.error(f"Failed to create user: {error}")
+        return None, error
+
+    logging.info(f"User '{display_name}' created successfully with ID {response.get('id')}")
+    return response, None
+
+## ✅ 2. List all users
+def list_users(ctx: RunContext) -> Tuple[Optional[List[Dict[str, Any]]], Optional[Dict[str, Any]]]:
+    """Lists all users in Microsoft Azure AD.
+
+    Returns:
+        tuple: (users_list, error) where users_list contains all users if successful,
+        or None and error details if failed
+    """
+    url = "https://graph.microsoft.com/v1.0/users"
+    all_users = []
+
+    try:
+        while url:
+            response, error = make_request("GET", url)
+            print("response", response)
+
+            if error:
+                logging.error(f"Failed to list users: {error}")
+                return None, error
+
+            users = response.get('value', [])
+            all_users.extend(users)
+            url = response.get('@odata.nextLink')
+
+        logging.info(f"Successfully retrieved {len(all_users)} users")
+        return all_users, None
+
+    except Exception as e:
+        logging.exception(f"Error listing users: {e}")
+        return None, {"error": "Unexpected error listing users", "details": str(e)}
+
+
+
+## ✅ 4. Add a user to a team
+def add_user_to_team(ctx: RunContext, team_id:str, user_email:str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Adds a user to an existing Microsoft Team.
+
+    Args:
+        team_id (str): The ID of the team to add the user to
+        user_email (str): The email address of the user to add
+
+    Returns:
+        tuple: (response_data, error) where response_data contains the member addition details if successful,
+        or None and error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/teams/{team_id}/members"
+    payload = {
+        "@odata.type": "#microsoft.graph.aadUserConversationMember",
+        "roles": [],
+        "user@odata.bind": f"https://graph.microsoft.com/v1.0/users('{user_email}')"
+    }
+
+    response, error = make_request("POST", url, json_data=payload)
+
+    if error:
+        logging.error(f"Failed to add user to team: {error}")
+        return None, error
+
+    logging.info(f"User '{user_email}' added to team {team_id} with member ID {response.get('id')}")
+    return response, None
+
+
+## ✅ 7. Search for users
+def search_users(ctx: RunContext, search_string:str) -> Tuple[Optional[List[Dict[str, Any]]], Optional[Dict[str, Any]]]:
+    """Searches for users whose display name contains the search string.
+
+    Args:
+        search_string (str): The string to search for in user properties
+
+    Returns:
+        tuple: (users_list, error) where users_list contains matching users if successful,
+        or None and error details if failed
+    """
+    # Matches "Manager", "Senior Manager", "Manager, Sales"
+    url = f"https://graph.microsoft.com/v1.0/users?$filter=startsWith(displayName, '{search_string}')"
+    all_users = []
+    try:
+        while url:
+            response, error = make_request("GET", url)
+
+            if error:
+                logging.error(f"Failed to search users: {error}")
+                return None, error
+
+            users = response.get('value', [])
+            all_users.extend(users)
+            url = response.get('@odata.nextLink')
+
+        logging.info(f"Found {len(all_users)} users matching '{search_string}' in field 'displayName'")
+        return all_users, None
+    except Exception as e:
+        logging.exception(f"Error searching users: {e}")
+        return None, {"error": "Unexpected error searching users", "details": str(e)}
+
+
+def search_users_by_field(ctx: RunContext, search_string: str, filter_field: str) -> Tuple[Optional[List[Dict[str, Any]]], Optional[Dict[str, Any]]]:
+    """Searches for users whose display name contains the search string.
+    
+    Args:
+        search_string (str): The string to search for in user properties
+        filter_field (str, optional): 
+            - displayName: The name displayed in the address book, default to this if not specified
+            - givenName: The user's first name
+            - surname: The user's last name 
+            - mail: The user's email address
+            - userPrincipalName: The principal name used to sign in
+            - jobTitle: The user's job title
+            - mobilePhone: The user's mobile phone number
+            - officeLocation: The user's office location
+        
+    Returns:
+        tuple: (users_list, error) where users_list contains matching users if successful,
+        or None and error details if failed
+    """
+    all_users = []
+    url = "https://graph.microsoft.com/v1.0/users"
+    
+    # Continue fetching pages until no more nextLink
+    while url:
+        response, error = make_request("GET", url)
+        
+        if error:
+            logging.error(f"Failed to search users: {error}")
+            return None, error
+        
+        if response:
+            users = response.get('value', [])
+            all_users.extend(users)
+            
+            # Get the URL for the next page, if any
+            url = response.get('@odata.nextLink')
+        else:
+            url = None
+    
+    # Filter users after collecting all pages
+    filtered_users = [user for user in all_users if search_string.lower() in str(user.get(filter_field, '')).lower()]
+    logging.info(f"Found {len(filtered_users)} users matching '{search_string}' in field '{filter_field}'")
+    
+    return filtered_users, None
+## ✅ 8. Get details for a specific user by their ID or userPrincipalName.
+def get_user(ctx: RunContext, user_id:str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Gets details for a specific user by their ID or userPrincipalName.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName
+
+    Returns:
+        tuple: (user_data, error) where user_data contains the user details if successful,
+        or None and error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    response, error = make_request("GET", url)
+
+    if error:
+        logging.error(f"Failed to get user: {error}")
+        return None, error
+
+    logging.info(f"Successfully retrieved details for user {response.get('displayName')} ({user_id})")
+    return response, None
+
+#make tools for update user display name, job title, and email all separate tools
+def update_user_display_name(ctx: RunContext, user_id: str, display_name: str) -> Tuple[None, Optional[Dict[str, Any]]]:
+    """Updates a user's display name.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName
+        display_name (str): The new display name for the user
+
+    Returns:
+        tuple: (None, error) where error is None if successful or contains error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    updates = {"displayName": display_name}
+
+    response, error = make_request("PATCH", url, json_data=updates)
+
+    if error:
+        logging.error(f"Failed to update user display name: {error}")
+        return None, error
+
+    logging.info(f"Display name for user '{user_id}' updated successfully to '{display_name}'")
+    return None, None
+
+def update_user_job_title(ctx: RunContext, user_id: str, job_title: str) -> Tuple[None, Optional[Dict[str, Any]]]:
+    """Updates a user's job title.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName
+        job_title (str): The new job title for the user
+
+    Returns:
+        tuple: (None, error) where error is None if successful or contains error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    updates = {"jobTitle": job_title}
+
+    response, error = make_request("PATCH", url, json_data=updates)
+
+    if error:
+        logging.error(f"Failed to update user job title: {error}")
+        return None, error
+
+    logging.info(f"Job title for user '{user_id}' updated successfully to '{job_title}'")
+    return None, None
+
+def update_user_email(ctx: RunContext, user_id: str, email: str) -> Tuple[None, Optional[Dict[str, Any]]]:
+    """Updates a user's email address.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName
+        email (str): The new email address for the user
+
+    Returns:
+        tuple: (None, error) where error is None if successful or contains error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    updates = {"mail": email, "userPrincipalName": email}
+
+    response, error = make_request("PATCH", url, json_data=updates)
+
+    if error:
+        logging.error(f"Failed to update user email: {error}")
+        return None, error
+
+    logging.info(f"Email for user '{user_id}' updated successfully to '{email}'")
+    return None, None
+
+
+## ✅ 10. Delete a user
+def delete_user(ctx: RunContext, user_id:str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    """Deletes a user from Microsoft Azure AD.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName
+
+    Returns:
+        tuple: (success_message, error) where success_message indicates successful deletion
+        or None and error details if failed
+    """
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    response, error = make_request("DELETE", url)
+
+    if error:
+        logging.error(f"Failed to delete user: {error}")
+        return None, error
+
+    logging.info(f"User '{user_id}' deleted successfully")
+    return f"Successfully deleted user {user_id}", None  # Return success message
+
+
+def get_user_team_channel_memberships(ctx: RunContext, user_id: str) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Retrieves all Microsoft Teams and Channels that a user is a member of.
+
+    Args:
+        user_id (str): The user's ID or userPrincipalName.
+
+    Returns:
+        tuple: A tuple containing:
+            - A dictionary: { "teams": [team_details], "channels": {team_id: [channel_details]} }.
+            - An error dictionary if an error occurred, or None if successful.
+    """
+    user_teams, teams_error = list_users_joined_team(ctx, user_id)
+    if teams_error:
+        logging.error(f"Error getting teams for user {user_id}: {teams_error}")
+        return None, teams_error
+
+    user_channels = {}
+
+    for team in user_teams:
+        team_id = team['id']
+        channels, channels_error = list_channels(ctx, team_id)
+        if channels_error:
+            logging.warning(f"Error getting channels for team {team_id}: {channels_error}")
+            continue  # Proceed to the next team
+
+        user_channels[team_id] = channels
+
+    result = {"teams": user_teams, "channels": user_channels}
+    logging.info(f"Found user {user_id} in {len(user_teams)} teams and retrieved channels for each.")
+    return result, None
+
+
+
+

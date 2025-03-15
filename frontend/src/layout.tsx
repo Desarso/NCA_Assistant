@@ -53,27 +53,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, []);
     
   return (
-    <SidebarProvider
-    >
-      <AppSidebar 
-        chats={chats}
-      />
+    <SidebarProvider>
+      <AppSidebar chats={chats} />
       <main className="flex flex-col h-screen w-full">
-        <div className="flex items-center justify-between p-2 bg-gray-200 dark:bg-gray-700">
-          <div className="flex items-center h-18 w-full md:h-[28px]">
-            <SidebarTrigger
-              className="h-15 w-15
-              [&_svg:not([class*='size-'])]:size-10!
-              md:[&_svg:not([class*='size-'])]:size-5!
-              "
-            >
+        <header className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors [&_svg:not([class*='size-'])]:size-7! md:[&_svg:not([class*='size-'])]:size-5!">
             </SidebarTrigger>
-            <h1 className="text-3xl! 
-            
-            md:text-base! font-semibold ml-2 text-gray-800 dark:text-gray-200">NCA Assistant</h1>
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200 md:text-lg">
+              NCA Assistant
+            </h1>
           </div>
-          {isMobile && <PWAInstallButton className="ml-auto" />}
-        </div>
+          {isMobile && (
+            <PWAInstallButton className="ml-auto" />
+          )}
+        </header>
         {children}
       </main>
     </SidebarProvider>

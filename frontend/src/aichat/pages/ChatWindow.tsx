@@ -3,12 +3,15 @@ import ReactMarkdown from 'react-markdown';
 import WaveIcon from './WaveIcon';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import supersub from "remark-supersub";
 
 import Prism from 'prismjs'
+import './index.css'
 // import 'prismjs/components/prism-python'
-import './index.css';
 import { Message } from '../models/models';
 import componentsJson from './components.json';
+import MicrophoneVisualizer from './MicrophoneVisualizer';
+import { useSidebar } from "@/components/ui/sidebar";
 
 const components = componentsJson as any;
 const HOST = import.meta.env.VITE_CHAT_HOST;
@@ -98,7 +101,7 @@ function CustomPre({ children }: any) {
   };
 
   return (
-    <div className="relative bg-gray-100 border border-gray-300 rounded-lg my-4 dark:bg-gray-800 dark:border-gray-600">
+    <div className="relative bg-gray-100 border border-gray-300 rounded-lg my-4 dark:bg-gray-800 dark:border-gray-600 p-0 m-0">
       <button
         onClick={handleCopy}
         className="absolute top-2 right-2 text-gray-600 text-xs p-2 rounded hover:text-gray-800 transition flex items-center gap-1 dark:text-gray-400 dark:hover:text-gray-200"
@@ -125,7 +128,7 @@ function CustomPre({ children }: any) {
           {copied ? 'Copied!' : 'Copy'}
         </span>
       </button>
-      <pre className="overflow-x-auto dark:text-gray-100">{children}</pre>
+      <pre className="overflow-x-auto dark:text-gray-100 p-4 whitespace-pre-wrap break-words">{children}</pre>
     </div>
   );
 }
@@ -196,30 +199,28 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
     .filter((message): message is ChatMessage => message !== null);
 }
 
-
-
-
-
 function ChatWindow({ id }: { id?: string }) {
+  const { open, openMobile, isMobile } = useSidebar();
   const [gettingResponse, setGettingResponse] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [conversationId, _] = useState<string>(id || crypto.randomUUID().toString());
+  const [isMuted, setIsMuted] = useState<boolean>(false);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = async() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     scrollToBottom();
     Prism.highlightAll();
   }, [messages]);
-
-
 
   //   //when chats load set messages
   useEffect(() => {
@@ -231,7 +232,9 @@ function ChatWindow({ id }: { id?: string }) {
     })();
   }, []);
 
-
+  // useEffect(() => {
+  //   console.log("open", open);
+  // }, [open, ]);
 
   const handleSubmit = async (e: FormEvent) => {
     if (window.location.pathname === '/') {
@@ -250,8 +253,10 @@ function ChatWindow({ id }: { id?: string }) {
         setInput('');
         setGettingResponse(true);
 
-        messages.push(newMessage);
-        scrollToBottom();
+        // Create a new array with both messages
+        const updatedMessages = [...messages, newMessage];
+        setMessages(updatedMessages);
+        await scrollToBottom();
 
         const url = new URL(`${HOST}/chat`);
         url.searchParams.append('prompt', input);
@@ -285,6 +290,8 @@ function ChatWindow({ id }: { id?: string }) {
                 role: 'assistant',
                 content: '',
             };
+            // Update the messages array with the assistant message
+            const newMessages = [...updatedMessages, assistantMessage];
             messages.push(assistantMessage);
 
             let buffer = '';
@@ -302,19 +309,18 @@ function ChatWindow({ id }: { id?: string }) {
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         try {
-                            const jsonString = line.slice(6); // Remove 'data: ' prefix
+                            const jsonString = line.slice(6);
                             const data = JSON.parse(jsonString);
-                            console.log(data);
                             
                             if (data.type === 'part_start') {
-                                messages[messages.length - 1].content += data.data.part.content;
+                                newMessages[newMessages.length - 1].content += data.data.part.content;
                             } else if (data.type === 'part_delta') {
-                                messages[messages.length - 1].content += data.data.delta.content;
+                                newMessages[newMessages.length - 1].content += data.data.delta.content;
                             } else if (data.type === 'tool_call') {
                                 console.log('Tool call:', data);
                             }
                             
-                            setMessages([...messages]); // Trigger re-render
+                            setMessages([...newMessages]); // Trigger re-render with the updated array
                         } catch (e) {
                             console.error('Error parsing JSON:', e);
                         }
@@ -362,66 +368,105 @@ function ChatWindow({ id }: { id?: string }) {
     console.log('File attachment initiated');
   };
 
-  const toggleListening = () => {
-    if (input.trim() === '') {
-      setIsListening(!isListening);
-    } else {
-      handleSubmit({ preventDefault: () => {} } as FormEvent); // Mock event object
+  const handleMicrophoneClose = () => {
+    if (navigator.mediaDevices) {
+      console.log('Stopping microphone');
+      // Stop all microphone tracks
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          //print all tracks
+          console.log(stream.getTracks());
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(err => console.error('Error accessing microphone:', err));
     }
+    setIsListening(false);
+  };
+
+  const handleMicrophoneMute = () => {
+    if (navigator.mediaDevices) {
+      // Stop all microphone tracks
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(err => console.error('Error accessing microphone:', err));
+    }
+    setIsMuted(!isMuted);
   };
 
   return (
-    <div className="Chat-Container h-full w-full relative flex align-center justify-center chatMessages max-h-[calc(100vh-88px)]
-      md:max-h-[calc(100vh-44px)]
-    ">
-      <div className="chat-window">
-        {isListening ? (
-          // <AudioCircle onClose={() => setIsListening(false)} />
-          <></>
-        ) : (
-          <>
-            <div className="chat-messages text-xl! md:text-base!">
-              {messages.map((message, index) => (
-                message.role === 'user' || message.role === 'assistant' ? (
-                  <div key={index} className={`message ${message.role}`}>
-                    {message.role === 'user'
-                      ? (message.content as string)
-                      : message.role === 'assistant' && (
-                          <ReactMarkdown
-                            components={{
-                              pre: CustomPre,
-                            }}
-                            children={message.content as string}
-                            remarkPlugins={[remarkGfm, remarkBreaks]}
-                          />
-                        )}
+    <div className="flex h-full w-full flex-col justify-center items-center bg-gray-50 dark:bg-gray-900 ">
+      {isListening ? (
+        <div className="flex-1 flex items-center justify-center">
+          <MicrophoneVisualizer 
+            isListening={!isMuted} 
+            onClose={handleMicrophoneClose}
+            onMute={handleMicrophoneMute}
+          />
+        </div>
+      ) : (
+        <>
+          <div className={`flex-1 flex flex-col items-center overflow-y-auto p-4 space-y-6 Chat-Container 
+            max-h-[calc(100vh-134px)] 
+            md:max-h-[calc(100vh-136px)] 
+            ${isMobile ? (openMobile ? 'w-[calc(100vw-var(--sidebar-width))]' : 'w-full') : (open ? 'w-[calc(100vw-var(--sidebar-width))]' : 'w-full')}
+            `}>
+            {messages.map((message, index) => (
+              message.role === 'user' || message.role === 'assistant' ? (
+                <div 
+                  key={index} 
+                  className={`md:max-w-[900px] w-full flex ${message.role === 'user' ? 'message user justify-end' : 'message assistant justify-start'}`}
+                >
+                  <div className={`${
+                    message.role === 'user' 
+                      ? 'max-w-[70%] flex items-end self-end' 
+                      : 'w-full'
+                    } rounded-lg p-4 ${
+                    message.role === 'user' 
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
+                      : 'bg-white dark:bg-gray-800 shadow-sm'
+                  } break-words overflow-hidden`}>
+                    {message.role === 'user' ? (
+                      <div className="text-sm md:text-base">{message.content as string}</div>
+                    ) : (
+                      <ReactMarkdown
+                        components={{
+                          pre: CustomPre,
+                        }}
+                        children={message.content as string}
+                        remarkPlugins={[remarkGfm, remarkBreaks, supersub]}
+                        rehypePlugins={[]}
+                      />
+                    )}
                   </div>
-                ) : null
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-            <form onSubmit={handleSubmit} className="chat-input">
+                </div>
+              ) : null
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 w-full">
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
               <input
-                className="text-xl!
-                md:text-base!
-                "
+                className="flex-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:text-gray-200"
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type your message..."
               />
-              <div className="button-container">
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  className="icon-button"
+                  className="rounded-full p-2 text-gray-500 bg-gray-50 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700"
                   onClick={handleFileAttachment}
                 >
                   <i className="fas fa-paperclip"></i>
                 </button>
                 <button
                   type="button"
-                  className="icon-button main-action"
-                  onClick={toggleListening}
+                  className="rounded-full p-2 text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
+                  onClick={() => setIsListening(!isListening)}
                 >
                   {input.trim() === '' ? (
                     <WaveIcon />
@@ -431,9 +476,9 @@ function ChatWindow({ id }: { id?: string }) {
                 </button>
               </div>
             </form>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
