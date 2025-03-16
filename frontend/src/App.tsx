@@ -7,45 +7,56 @@ import "./index.css";
 import Layout from "./layout";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./lib/auth-context";
+import Animation from "./pages/Animation";
 
 function AppRoutes() {
   // const { setBiometricVerified } = useAuth();
   return (
     <>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/request-whitelist" element={<RequestWhitelist />} />
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <ChatWindow />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/chat/:id"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <ChatWindow id={window.location.pathname.split('/').pop()} />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route 
-            path="/settings" 
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <SettingsPage />
-                </Layout>
-              </PrivateRoute>
-            } 
-          />
-        </Routes>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/request-whitelist" element={<RequestWhitelist />} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ChatWindow />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat/:id"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ChatWindow id={window.location.pathname.split("/").pop()} />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/animation"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Animation />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <SettingsPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+      </Routes>
     </>
   );
 }

@@ -6,7 +6,9 @@ dist/
 wheels/
 *.egg-info
 .env
+new.env
 # Virtual environments
 .venv
 node_modules/
 firebase_credentials.json
+keys.json

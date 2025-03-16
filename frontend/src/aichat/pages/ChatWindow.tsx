@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect, FormEvent } from 'react';
-import ReactMarkdown from 'react-markdown';
-import WaveIcon from './WaveIcon';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
+import { useState, useRef, useEffect, FormEvent } from "react";
+import ReactMarkdown from "react-markdown";
+import WaveIcon from "./WaveIcon";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import supersub from "remark-supersub";
 
-import Prism from 'prismjs'
-import './index.css'
+import Prism from "prismjs";
+import "./index.css";
 // import 'prismjs/components/prism-python'
-import { Message } from '../models/models';
-import componentsJson from './components.json';
-import MicrophoneVisualizer from './MicrophoneVisualizer';
+import { Message } from "../models/models";
+import componentsJson from "./components.json";
+import MicrophoneVisualizer from "./MicrophoneVisualizer";
 import { useSidebar } from "@/components/ui/sidebar";
 
 const components = componentsJson as any;
@@ -18,7 +18,7 @@ const HOST = import.meta.env.VITE_CHAT_HOST;
 
 // Client-side language registry
 const loadedLanguages: { [key: string]: boolean } = {
-  markup: true,     // HTML, XML, SVG, MathML...
+  markup: true, // HTML, XML, SVG, MathML...
   HTML: true,
   XML: true,
   SVG: true,
@@ -27,8 +27,8 @@ const loadedLanguages: { [key: string]: boolean } = {
   Atom: true,
   RSS: true,
   css: true,
-  'c-like': true,
-  javascript: true,  // IMPORTANT: Use 'javascript' not 'js'
+  "c-like": true,
+  javascript: true, // IMPORTANT: Use 'javascript' not 'js'
 };
 
 const loadLanguage = async (language: string) => {
@@ -56,12 +56,14 @@ const loadLanguage = async (language: string) => {
     }
 
     // Import authFetch to add auth token to the request
-    const { authFetch } = await import('@/lib/utils');
-    
-    const response = await authFetch(`${HOST}/api/prism-language?name=${language}`);
+    const { authFetch } = await import("@/lib/utils");
+
+    const response = await authFetch(
+      `${HOST}/api/prism-language?name=${language}`
+    );
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch language "${language}": ${response.status}`,
+        `Failed to fetch language "${language}": ${response.status}`
       );
     }
     const scriptText = await response.text();
@@ -83,8 +85,8 @@ const loadLanguage = async (language: string) => {
 
 function CustomPre({ children }: any) {
   const [copied, setCopied] = useState(false);
-  const codeContent = children?.props?.children?.toString() || '';
-  const language = children?.props?.className?.replace('language-', '') || '';
+  const codeContent = children?.props?.children?.toString() || "";
+  const language = children?.props?.className?.replace("language-", "") || "";
 
   useEffect(() => {
     // console.log(language, " detected")
@@ -92,7 +94,6 @@ function CustomPre({ children }: any) {
       loadLanguage(language); // Load the language if it's not already loaded.
     }
   }, [language]);
-
 
   const handleCopy = () => {
     navigator.clipboard.writeText(codeContent);
@@ -116,19 +117,25 @@ function CustomPre({ children }: any) {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`icon icon-tabler icons-tabler-outline icon-tabler-copy transition-all duration-200 ${copied ? 'scale-75' : 'scale-100'}`}
+          className={`icon icon-tabler icons-tabler-outline icon-tabler-copy transition-all duration-200 ${
+            copied ? "scale-75" : "scale-100"
+          }`}
         >
           <path stroke="none" d="M0 0h24v24H0z" fill="none" />
           <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
           <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
         </svg>
         <span
-          className={`transition-all duration-200 ${copied ? 'text-sm' : 'text-xs'} dark:text-gray-400`}
+          className={`transition-all duration-200 ${
+            copied ? "text-sm" : "text-xs"
+          } dark:text-gray-400`}
         >
-          {copied ? 'Copied!' : 'Copy'}
+          {copied ? "Copied!" : "Copy"}
         </span>
       </button>
-      <pre className="overflow-x-auto dark:text-gray-100 p-4 whitespace-pre-wrap break-words">{children}</pre>
+      <pre className="overflow-x-auto dark:text-gray-100 p-4 whitespace-pre-wrap break-words">
+        {children}
+      </pre>
     </div>
   );
 }
@@ -149,47 +156,51 @@ interface DBMessage {
 
 function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
   return messages
-    .map(message => {
+    .map((message) => {
       try {
         const parsed = JSON.parse(message.content);
-        
+
         // Handle model requests
         if (parsed.type === "model_request") {
           // Find the UserPromptPart in the parts array
-          const userPart = parsed.parts.find((part: any) => part.type === "UserPromptPart");
+          const userPart = parsed.parts.find(
+            (part: any) => part.type === "UserPromptPart"
+          );
           if (userPart) {
             return {
               role: "user",
-              content: userPart.content
+              content: userPart.content,
             };
           }
-          const toolReturnPart = parsed.parts.find((part: any) => part.type === "ToolReturnPart");
+          const toolReturnPart = parsed.parts.find(
+            (part: any) => part.type === "ToolReturnPart"
+          );
           if (toolReturnPart) {
             return {
               role: "tool_response",
-              content: JSON.stringify(toolReturnPart.content)
+              content: JSON.stringify(toolReturnPart.content),
             };
           }
           return null;
         }
-        
+
         // Handle model responses
         if (parsed.type === "model_response") {
           if (parsed.parts[0].type === "TextPart") {
             return {
               role: "assistant",
-              content: parsed.parts[0].content
+              content: parsed.parts[0].content,
             };
           }
           if (parsed.parts[0].type === "ToolCallPart") {
             return {
               role: "tool_call",
-              content: JSON.stringify(parsed.parts[0].content)
+              content: JSON.stringify(parsed.parts[0].content),
             };
           }
           return null;
         }
-        
+
         return null;
       } catch (e) {
         console.error("Error parsing message:", e);
@@ -199,23 +210,105 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
     .filter((message): message is ChatMessage => message !== null);
 }
 
+// Create a new ChatInput component
+const ChatInput = ({ 
+  onSubmit, 
+  gettingResponse, 
+  handleFileAttachment, 
+  setIsListening, 
+  handleStopRequest 
+}: { 
+  onSubmit: (text: string) => void,
+  gettingResponse: boolean,
+  handleFileAttachment: () => void,
+  setIsListening: (isListening: boolean) => void,
+  handleStopRequest: () => void
+}) => {
+  const [input, setInput] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      onSubmit(input);
+      setInput("");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <input
+        className="flex-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:text-gray-200"
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Type your message..."
+        autoComplete="off"
+        spellCheck="false"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="rounded-full p-2 text-gray-500 bg-gray-50 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700"
+          onClick={handleFileAttachment}
+        >
+          <i className="fas fa-paperclip"></i>
+        </button>
+
+        {gettingResponse ? (
+          <button
+            type="button"
+            className="rounded-full p-2 text-red-600 bg-gray-100 hover:bg-gray-200 dark:text-red-400 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
+            onClick={handleStopRequest}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <rect x="6" y="6" width="12" height="12" />
+            </svg>
+          </button>
+        ) : input.trim() === "" ? (
+          <button
+            type="button"
+            className="rounded-full p-2 text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
+            onClick={() => setIsListening(true)}
+          >
+            <WaveIcon />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="rounded-full p-2 text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
+            onClick={handleSubmit}
+          >
+            <i className="fas fa-paper-plane"></i>
+          </button>
+        )}
+      </div>
+    </form>
+  );
+};
+
 function ChatWindow({ id }: { id?: string }) {
   const { open, openMobile, isMobile } = useSidebar();
   const [gettingResponse, setGettingResponse] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [conversationId, _] = useState<string>(id || crypto.randomUUID().toString());
+  const [conversationId, _] = useState<string>(
+    id || crypto.randomUUID().toString()
+  );
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
-  const scrollToBottom = async() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Add abort controller ref
+  const abortControllerRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const scrollToBottom = async () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -232,120 +325,125 @@ function ChatWindow({ id }: { id?: string }) {
     })();
   }, []);
 
-  // useEffect(() => {
-  //   console.log("open", open);
-  // }, [open, ]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    if (window.location.pathname === '/') {
-      window.history.pushState({}, '', `/chat/${conversationId}`);
+  
+  const handleSubmit = async (text: string) => {
+    if (window.location.pathname === "/") {
+      window.history.pushState({}, "", `/chat/${conversationId}`);
     }
-    
-    e.preventDefault();
+
     if (gettingResponse) return;
 
-    if (input.trim()) {
-        const newMessage: Message = {
-            role: 'user',
-            content: input,
-        };
+    setGettingResponse(true);
 
-        setInput('');
-        setGettingResponse(true);
+    const newMessage: Message = {
+      role: "user",
+      content: text,
+    };
 
-        // Create a new array with both messages
-        const updatedMessages = [...messages, newMessage];
-        setMessages(updatedMessages);
-        await scrollToBottom();
+    const updatedMessages = [...messages, newMessage];
+    setMessages(updatedMessages);
+    await scrollToBottom();
 
-        const url = new URL(`${HOST}/chat`);
-        url.searchParams.append('prompt', input);
-        console.log(conversationId);
-        url.searchParams.append('conversation_id', conversationId);
+    const url = new URL(`${HOST}/chat`);
+    url.searchParams.append("prompt", text);
+    console.log(conversationId);
+    url.searchParams.append("conversation_id", conversationId);
 
-        try {
-            // Import authFetch to add auth token to the request
-            const { authFetch } = await import('@/lib/utils');
-            
-            const response = await authFetch(url.toString(), {
-                method: 'POST',
-                headers: {
-                    'Accept': 'text/event-stream',
-                    'Content-Type': 'application/json',
-                },
-            });
+    try {
+      // Reset abort flag at start of new request
+      abortControllerRef.current = false;
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+      // Import authFetch to add auth token to the request
+      const { authFetch } = await import("@/lib/utils");
 
-            if (!response.body) {
-                throw new Error('Response body is null');
-            }
+      const response = await authFetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+        },
+      });
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-            let assistantMessage: Message = {
-                role: 'assistant',
-                content: '',
-            };
-            // Update the messages array with the assistant message
-            const newMessages = [...updatedMessages, assistantMessage];
-            messages.push(assistantMessage);
+      if (!response.body) {
+        throw new Error("Response body is null");
+      }
 
-            let buffer = '';
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+      let assistantMessage: Message = {
+        role: "assistant",
+        content: "",
+      };
+      // Update the messages array with the assistant message
+      const newMessages = [...updatedMessages, assistantMessage];
+      messages.push(assistantMessage);
 
-                buffer += decoder.decode(value, { stream: true });
+      let buffer = "";
 
-                // Process complete SSE messages from buffer
-                const lines = buffer.split('\n\n');
-                buffer = lines.pop() || ''; // Keep the last incomplete chunk in the buffer
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const jsonString = line.slice(6);
-                            const data = JSON.parse(jsonString);
-                            
-                            if (data.type === 'part_start') {
-                                newMessages[newMessages.length - 1].content += data.data.part.content;
-                            } else if (data.type === 'part_delta') {
-                                newMessages[newMessages.length - 1].content += data.data.delta.content;
-                            } else if (data.type === 'tool_call') {
-                                console.log('Tool call:', data);
-                            }
-                            
-                            setMessages([...newMessages]); // Trigger re-render with the updated array
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                        }
-                    }
-                }
-            }
-
-        } catch (error) {
-            console.error('Error sending message:', error);
-        } finally {
-            setGettingResponse(false);
+      while (true) {
+        // Check if request was aborted
+        if (abortControllerRef.current) {
+          reader.cancel();
+          break;
         }
+
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete SSE messages from buffer
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || ""; // Keep the last incomplete chunk in the buffer
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const jsonString = line.slice(6);
+              const data = JSON.parse(jsonString);
+
+              if (data.type === "part_start") {
+                // await appendContentWithDelay(data.data.part.content, newMessages);
+                messages[messages.length - 1].content += data.data.part.content;
+                // setMessages([...messages]);
+              } else if (data.type === "part_delta") {
+                //await appendContentWithDelay(data.data.delta.content, newMessages);
+                messages[messages.length - 1].content += data.data.delta.content;
+                // setMessages([...messages]);
+              } else if (data.type === "tool_call") {
+                console.log("Tool call:", data);
+              }
+
+              setMessages([...newMessages]); // Trigger re-render with the updated array
+            } catch (e) {
+              console.error("Error parsing JSON:", e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setGettingResponse(false);
     }
-};
+  };
 
   const fetchMessageHistory = async () => {
     const url = new URL(`${HOST}/conversations/${conversationId}/messages`);
     try {
       // Import here to avoid circular dependency
-      const { authFetch } = await import('@/lib/utils');
-      
+      const { authFetch } = await import("@/lib/utils");
+
       const response = await authFetch(url.toString(), {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -360,25 +458,26 @@ function ChatWindow({ id }: { id?: string }) {
       // console.log(data);
       setMessages(chatMessages);
     } catch (error) {
-      console.error('Failed to fetch chat history:', error);
+      console.error("Failed to fetch chat history:", error);
     }
   };
 
   const handleFileAttachment = () => {
-    console.log('File attachment initiated');
+    console.log("File attachment initiated");
   };
 
   const handleMicrophoneClose = () => {
     if (navigator.mediaDevices) {
-      console.log('Stopping microphone');
+      console.log("Stopping microphone");
       // Stop all microphone tracks
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
           //print all tracks
           console.log(stream.getTracks());
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach((track) => track.stop());
         })
-        .catch(err => console.error('Error accessing microphone:', err));
+        .catch((err) => console.error("Error accessing microphone:", err));
     }
     setIsListening(false);
   };
@@ -386,49 +485,74 @@ function ChatWindow({ id }: { id?: string }) {
   const handleMicrophoneMute = () => {
     if (navigator.mediaDevices) {
       // Stop all microphone tracks
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          stream.getTracks().forEach(track => track.stop());
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          stream.getTracks().forEach((track) => track.stop());
         })
-        .catch(err => console.error('Error accessing microphone:', err));
+        .catch((err) => console.error("Error accessing microphone:", err));
     }
     setIsMuted(!isMuted);
+  };
+
+  // Update the stop button click handler
+  const handleStopRequest = () => {
+    abortControllerRef.current = true;
+    setGettingResponse(false);
   };
 
   return (
     <div className="flex h-full w-full flex-col justify-center items-center bg-gray-50 dark:bg-gray-900 ">
       {isListening ? (
         <div className="flex-1 flex items-center justify-center">
-          <MicrophoneVisualizer 
-            isListening={!isMuted} 
+          <MicrophoneVisualizer
+            isListening={!isMuted}
             onClose={handleMicrophoneClose}
             onMute={handleMicrophoneMute}
           />
         </div>
       ) : (
         <>
-          <div className={`flex-1 flex flex-col items-center overflow-y-auto p-4 space-y-6 Chat-Container 
+          <div
+            className={`flex-1 flex flex-col items-center overflow-y-auto p-4 space-y-6 Chat-Container 
             max-h-[calc(100vh-134px)] 
             md:max-h-[calc(100vh-136px)] 
-            ${isMobile ? (openMobile ? 'w-[calc(100vw-var(--sidebar-width))]' : 'w-full') : (open ? 'w-[calc(100vw-var(--sidebar-width))]' : 'w-full')}
-            `}>
-            {messages.map((message, index) => (
-              message.role === 'user' || message.role === 'assistant' ? (
-                <div 
-                  key={index} 
-                  className={`md:max-w-[900px] w-full flex ${message.role === 'user' ? 'message user justify-end' : 'message assistant justify-start'}`}
+            ${
+              isMobile
+                ? openMobile
+                  ? "w-[calc(100vw-var(--sidebar-width))]"
+                  : "w-full"
+                : open
+                ? "w-[calc(100vw-var(--sidebar-width))]"
+                : "w-full"
+            }
+            `}
+          >
+            {messages.map((message, index) =>
+              message.role === "user" || message.role === "assistant" ? (
+                <div
+                  key={index}
+                  className={`md:max-w-[900px] w-full flex ${
+                    message.role === "user"
+                      ? "message user justify-end"
+                      : "message assistant justify-start"
+                  }`}
                 >
-                  <div className={`${
-                    message.role === 'user' 
-                      ? 'max-w-[70%] flex items-end self-end' 
-                      : 'w-full'
+                  <div
+                    className={`${
+                      message.role === "user"
+                        ? "max-w-[70%] flex items-end self-end"
+                        : "w-full"
                     } rounded-lg p-4 ${
-                    message.role === 'user' 
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
-                      : 'bg-white dark:bg-gray-800 shadow-sm'
-                  } break-words overflow-hidden`}>
-                    {message.role === 'user' ? (
-                      <div className="text-sm md:text-base">{message.content as string}</div>
+                      message.role === "user"
+                        ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        : "bg-white dark:bg-gray-800 shadow-sm"
+                    } break-words overflow-hidden`}
+                  >
+                    {message.role === "user" ? (
+                      <div className="text-sm md:text-base">
+                        {message.content as string}
+                      </div>
                     ) : (
                       <ReactMarkdown
                         components={{
@@ -442,40 +566,18 @@ function ChatWindow({ id }: { id?: string }) {
                   </div>
                 </div>
               ) : null
-            ))}
+            )}
             <div ref={messagesEndRef} />
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 w-full">
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-              <input
-                className="flex-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:text-gray-200"
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="rounded-full p-2 text-gray-500 bg-gray-50 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700"
-                  onClick={handleFileAttachment}
-                >
-                  <i className="fas fa-paperclip"></i>
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full p-2 text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
-                  onClick={() => setIsListening(!isListening)}
-                >
-                  {input.trim() === '' ? (
-                    <WaveIcon />
-                  ) : (
-                    <i className="fas fa-paper-plane"></i>
-                  )}
-                </button>
-              </div>
-            </form>
+            <ChatInput 
+              onSubmit={handleSubmit}
+              gettingResponse={gettingResponse}
+              handleFileAttachment={handleFileAttachment}
+              setIsListening={setIsListening}
+              handleStopRequest={handleStopRequest}
+            />
           </div>
         </>
       )}
