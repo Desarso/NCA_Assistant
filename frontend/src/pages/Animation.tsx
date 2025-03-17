@@ -1,6 +1,6 @@
-import FadingChar from "@/components/FadingChar";
+// import FadingChar from "@/components/FadingChar";
 import { useEffect } from "react";
-import { createRoot } from 'react-dom/client';
+// import { createRoot } from 'react-dom/client';
 import "./animation.css";
 
 
