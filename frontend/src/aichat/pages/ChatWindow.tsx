@@ -12,6 +12,8 @@ import { Message } from "../models/models";
 import componentsJson from "./components.json";
 import MicrophoneVisualizer from "./MicrophoneVisualizer";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useChatContext } from "@/layout";
+import { useParams } from "react-router-dom";
 
 const components = componentsJson as any;
 const HOST = import.meta.env.VITE_CHAT_HOST;
@@ -159,6 +161,7 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
     .map((message) => {
       try {
         const parsed = JSON.parse(message.content);
+        // console.log(parsed);
 
         // Handle model requests
         if (parsed.type === "model_request") {
@@ -186,19 +189,30 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
 
         // Handle model responses
         if (parsed.type === "model_response") {
-          if (parsed.parts[0].type === "TextPart") {
-            return {
-              role: "assistant",
-              content: parsed.parts[0].content,
-            };
+          //to rerturn
+          let result = {
+            role: "assistant",
+            content: "",
+            reasoning: "",
+          };
+
+          for (const part of parsed.parts) {
+            if (part.type === "TextPart") {
+              result.content = part.content;
+            }
+            if (part.type === "ReasoningPart") {
+              result.reasoning = part.content;
+              return result;
+            }
           }
+          
           if (parsed.parts[0].type === "ToolCallPart") {
             return {
               role: "tool_call",
               content: JSON.stringify(parsed.parts[0].content),
             };
           }
-          return null;
+          return null;  
         }
 
         return null;
@@ -292,23 +306,40 @@ const ChatInput = ({
   );
 };
 
-function ChatWindow({ id }: { id?: string }) {
+function ChatWindow() {
   const { open, openMobile, isMobile } = useSidebar();
   const [gettingResponse, setGettingResponse] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [conversationId, _] = useState<string>(
+  const { id } = useParams();
+  const [conversationId, setConversationId] = useState<string>(
     id || crypto.randomUUID().toString()
   );
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   // Add abort controller ref
   const abortControllerRef = useRef<boolean>(false);
+  const { fetchConversations } = useChatContext();
 
   const scrollToBottom = async () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    console.log("id", id);
+    if (id) {
+      setConversationId(id);
+    }
+    (async () => {
+      await fetchMessageHistory(id);
+
+      Prism.highlightAll();
+    })();
+
+  }, [id])
+    
+
 
   useEffect(() => {
     scrollToBottom();
@@ -328,9 +359,6 @@ function ChatWindow({ id }: { id?: string }) {
 
   
   const handleSubmit = async (text: string) => {
-    if (window.location.pathname === "/") {
-      window.history.pushState({}, "", `/chat/${conversationId}`);
-    }
 
     if (gettingResponse) return;
 
@@ -347,7 +375,7 @@ function ChatWindow({ id }: { id?: string }) {
 
     const url = new URL(`${HOST}/chat`);
     url.searchParams.append("prompt", text);
-    console.log(conversationId);
+    // console.log(conversationId);
     url.searchParams.append("conversation_id", conversationId);
 
     try {
@@ -379,6 +407,7 @@ function ChatWindow({ id }: { id?: string }) {
       let assistantMessage: Message = {
         role: "assistant",
         content: "",
+        reasoning: "",
       };
       // Update the messages array with the assistant message
       const newMessages = [...updatedMessages, assistantMessage];
@@ -407,14 +436,27 @@ function ChatWindow({ id }: { id?: string }) {
             try {
               const jsonString = line.slice(6);
               const data = JSON.parse(jsonString);
-
+              // console.log("data:", data);
+              // console.log("event kind:", data.type);
+              // console.log("data.data:", data.data.part.part_kind);
               if (data.type === "part_start") {
-                // await appendContentWithDelay(data.data.part.content, newMessages);
-                messages[messages.length - 1].content += data.data.part.content;
-                // setMessages([...messages]);
+                  console.log("Part start:", data);
+                  if (data.data.part.part_kind === "text") {
+                    messages[messages.length - 1].content += data.data.part.content;
+                    console.log("Text part:", data.data.part.content);
+                  } else if (data.data.part.part_kind === "reasoning") {
+                    messages[messages.length - 1].reasoning += data.data.part.reasoning;
+                    console.log("Reasoning part:", data.data.part.reasoning);
+                  }
               } else if (data.type === "part_delta") {
-                //await appendContentWithDelay(data.data.delta.content, newMessages);
-                messages[messages.length - 1].content += data.data.delta.content;
+                if (data.data.delta.part_kind === "text") {
+                  console.log("Text delta:", data.data.delta.content);
+                  messages[messages.length - 1].content += data.data.delta.content;
+                } else if (data.data.delta.part_kind === "reasoning") {
+                  console.log("Reasoning delta:", data.data.delta.reasoning);
+                  messages[messages.length - 1].reasoning += data.data.delta.reasoning;
+                }
+                //await appendContentWithDelay(data.data.delta.content, newMessages);;
                 // setMessages([...messages]);
               } else if (data.type === "tool_call") {
                 console.log("Tool call:", data);
@@ -427,6 +469,12 @@ function ChatWindow({ id }: { id?: string }) {
           }
         }
       }
+
+      if (window.location.pathname === "/") {
+        window.history.pushState({}, "", `/chat/${conversationId}`);
+        fetchConversations();
+      }
+  
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -434,8 +482,8 @@ function ChatWindow({ id }: { id?: string }) {
     }
   };
 
-  const fetchMessageHistory = async () => {
-    const url = new URL(`${HOST}/conversations/${conversationId}/messages`);
+  const fetchMessageHistory = async (id: string = conversationId) => {
+    const url = new URL(`${HOST}/conversations/${id}/messages`);
     try {
       // Import here to avoid circular dependency
       const { authFetch } = await import("@/lib/utils");
@@ -452,7 +500,7 @@ function ChatWindow({ id }: { id?: string }) {
       }
 
       const data = await response.json();
-      console.log(data.messages);
+      // console.log(data.messages);
       const chatMessages = convertToChatMessages(data.messages);
       console.log(chatMessages);
       // console.log(data);

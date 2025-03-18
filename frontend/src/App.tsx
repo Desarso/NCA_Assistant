@@ -31,7 +31,7 @@ function AppRoutes() {
           element={
             <PrivateRoute>
               <Layout>
-                <ChatWindow id={window.location.pathname.split("/").pop()} />
+                <ChatWindow/>
               </Layout>
             </PrivateRoute>
           }

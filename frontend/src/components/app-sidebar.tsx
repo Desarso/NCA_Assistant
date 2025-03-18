@@ -13,6 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Link } from "react-router-dom";
+import { useChatContext } from "@/layout";
 
 // Menu items.
 const items = [
@@ -43,12 +45,16 @@ const items = [
   },
 ];
 
-interface Chat {
-  id: string;
-  title: string;
-}
 
-export function AppSidebar({ chats }: { chats: Chat[] }) {
+
+
+
+export function AppSidebar() {
+
+
+  const { chats } = useChatContext();
+
+  
   return (
     <Sidebar>
       <SidebarContent>
@@ -66,13 +72,16 @@ export function AppSidebar({ chats }: { chats: Chat[] }) {
               {chats.map((chat) => (
                 <SidebarMenuItem key={chat.id}>
                   <SidebarMenuButton asChild>
-                    <a
-                      href={`/chat/${chat.id}`}
+                    <Link
+                      // onClick={() => {
+                      //   window.history.pushState({}, "", `/chat/${chat.id}`);
+                      // }}
+                      to={`/chat/${chat.id}`}
                       className="flex items-center gap-2 px-3 py-2 text-base md:text-sm font-medium text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                       <MessageSquare className="h-5 w-5 md:h-4 md:w-4" />
                       <span className="truncate">{chat.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

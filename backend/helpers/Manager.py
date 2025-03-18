@@ -1,6 +1,6 @@
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.gemini import GeminiModel
-from pydantic_ai.providers.google_gla import GoogleGLAProvider
+from custom import Agent, RunContext
+# from custom.models.gemini import GeminiModel
+# from custom.providers.google_gla import GoogleGLAProvider
 import os
 import logging
 # from pydantic_ai import agent_tool # Assuming you'll use agent_tool later, but not crucial for this core logic.
@@ -9,7 +9,7 @@ from typing import Tuple, Optional, Dict, Any
 import sys
 import subprocess
 import tempfile
-from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
+from custom.common_tools.duckduckgo import duckduckgo_search_tool
 from helpers.assistant_functions.user_functions import (
     create_user,
     list_users,
@@ -37,6 +37,8 @@ from helpers.assistant_functions.team_functions import (
     search_teams,
     list_users_joined_team,
 )
+from custom.models.groq import GroqModel
+from custom.providers.groq import GroqProvider
 # Remove unused import
 # from helpers.assistant_functions.team_functions import *
 
@@ -50,12 +52,23 @@ tenant_id = os.getenv("TENANT_ID")
 client_id = os.getenv("APP_ID")
 client_secret = os.getenv("SECRET")
 
-model = GeminiModel(
-    "gemini-2.0-flash", provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
+# model = GeminiModel(
+#     "gemini-2.0-pro-exp-02-05", provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
+# )
+
+
+
+groq_model = GroqModel(
+    "deepseek-r1-distill-llama-70b", provider=GroqProvider(
+        api_key=os.getenv("GROQ_API_KEY")
+        )
 )
+
+
+
 # Create an agent with your tools
 agent = Agent(
-    model=model,
+    model=groq_model,
     system_prompt="""
 **Prompt for IT Agent:**
 

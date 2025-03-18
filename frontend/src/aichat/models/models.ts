@@ -12,6 +12,7 @@ export interface ImageContent {
 export interface Message {
     role: string;
     content: (TextContent | ImageContent)[] | String;
+    reasoning?: string;
   }
 
 
