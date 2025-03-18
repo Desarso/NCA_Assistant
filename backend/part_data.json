@@ -1,21 +1,47 @@
 {
   "type": "ToolReturnPart",
   "content": {
-    "name": "remove_license_from_user",
+    "name": "get_user_channels",
     "content": [
       {
-        "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users/$entity",
-        "businessPhones": [],
-        "displayName": "NCA_Assistant",
-        "givenName": null,
-        "jobTitle": null,
-        "mail": "NCA_Assistant@novastone-ca.com",
-        "mobilePhone": null,
-        "officeLocation": null,
-        "preferredLanguage": null,
-        "surname": null,
-        "userPrincipalName": "NCA_Assistant@novastone-ca.com",
-        "id": "6cad2c9d-f4dc-4639-af64-b1225cd53438"
+        "d01a7867-b7b5-46ab-9239-966c39626041": [
+          {
+            "id": "19:2c56f48cbc54433ba28d1179b41a722c@thread.tacv2",
+            "createdDateTime": "2025-01-20T03:30:01.576Z",
+            "displayName": "Deals",
+            "description": null,
+            "isFavoriteByDefault": null,
+            "email": null,
+            "tenantId": "76fbb7ed-a04c-483e-afaa-6eb66c4665b3",
+            "webUrl": "https://teams.microsoft.com/l/channel/19%3A2c56f48cbc54433ba28d1179b41a722c%40thread.tacv2/Deals?groupId=d01a7867-b7b5-46ab-9239-966c39626041&tenantId=76fbb7ed-a04c-483e-afaa-6eb66c4665b3&allowXTenantAccess=True&ngc=True",
+            "membershipType": "private",
+            "isArchived": false
+          },
+          {
+            "id": "19:b897fe136dd04a01ab5981cd247d68c5@thread.tacv2",
+            "createdDateTime": "2025-01-20T03:33:52.282Z",
+            "displayName": "Yoann Faucho - Legal Docs",
+            "description": null,
+            "isFavoriteByDefault": null,
+            "email": null,
+            "tenantId": "76fbb7ed-a04c-483e-afaa-6eb66c4665b3",
+            "webUrl": "https://teams.microsoft.com/l/channel/19%3Ab897fe136dd04a01ab5981cd247d68c5%40thread.tacv2/Yoann%20Faucho%20-%20Legal%20Docs?groupId=d01a7867-b7b5-46ab-9239-966c39626041&tenantId=76fbb7ed-a04c-483e-afaa-6eb66c4665b3&allowXTenantAccess=True&ngc=True",
+            "membershipType": "private",
+            "isArchived": false
+          },
+          {
+            "id": "19:HYaiccRakGQCCjrDqPc78iJZomkF8KJI5yEiIV6KIgk1@thread.tacv2",
+            "createdDateTime": "2025-01-06T15:33:46.734Z",
+            "displayName": "General",
+            "description": "Searcher Group for Yoann Fauchon",
+            "isFavoriteByDefault": null,
+            "email": "NCASF096-YoannFauchon@novastone-ca.com",
+            "tenantId": "76fbb7ed-a04c-483e-afaa-6eb66c4665b3",
+            "webUrl": "https://teams.microsoft.com/l/channel/19%3AHYaiccRakGQCCjrDqPc78iJZomkF8KJI5yEiIV6KIgk1%40thread.tacv2/NCA%20SF%20096%20-%20Yoann%20Fauchon?groupId=d01a7867-b7b5-46ab-9239-966c39626041&tenantId=76fbb7ed-a04c-483e-afaa-6eb66c4665b3&allowXTenantAccess=True&ngc=True",
+            "membershipType": "standard",
+            "isArchived": false
+          }
+        ]
       },
       null
     ],

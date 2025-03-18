@@ -10,7 +10,7 @@ import "./index.css";
 // import 'prismjs/components/prism-python'
 import { Message } from "../models/models";
 import componentsJson from "./components.json";
-import MicrophoneVisualizer from "./MicrophoneVisualizer";
+import MicrophoneVisualizer from "../../components/MicrophoneVisualizer";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useChatContext } from "@/layout";
 import { useParams } from "react-router-dom";
@@ -70,14 +70,11 @@ const loadLanguage = async (language: string) => {
     }
     const scriptText = await response.text();
 
-    // console.log("Script: ", language)
-    // console.log(scriptText);
 
     // Execute the script.  Important: This is where the Prism component is registered.
     eval(scriptText); // VERY CAREFUL.  See security notes below.
 
     loadedLanguages[language] = true;
-    // console.log(`Language "${language}" loaded successfully.`);
     Prism.highlightAll();
   } catch (error) {
     console.error(`Error loading language "${language}":`, error);
@@ -196,7 +193,6 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
           };
 
           for (const part of parsed.parts) {
-            // console.log("part", part);
             if (part.type === "TextPart") {
               result.content += part.content;
             }
@@ -373,9 +369,8 @@ function ChatWindow() {
     setMessages(updatedMessages);
     await scrollToBottom();
 
-    const url = new URL(`${HOST}/chat`);
+    const url = new URL(`${HOST}/api/v1/chats/chat`);
     url.searchParams.append("prompt", text);
-    // console.log(conversationId);
     url.searchParams.append("conversation_id", conversationId);
 
     try {
@@ -440,20 +435,20 @@ function ChatWindow() {
               // console.log("event kind:", data.type);
               // console.log("data.data:", data.data.part.part_kind);
               if (data.type === "part_start") {
-                  console.log("Part start:", data);
+                  // console.log("Part start:", data);
                   if (data.data.part.part_kind === "text") {
                     messages[messages.length - 1].content += data.data.part.content;
-                    console.log("Text part:", data.data.part.content);
+                    // console.log("Text part:", data.data.part.content);
                   } else if (data.data.part.part_kind === "reasoning") {
                     messages[messages.length - 1].reasoning += data.data.part.reasoning;
-                    console.log("Reasoning part:", data.data.part.reasoning);
+                    // console.log("Reasoning part:", data.data.part.reasoning);
                   }
               } else if (data.type === "part_delta") {
                 if (data.data.delta.part_kind === "text") {
-                  console.log("Text delta:", data.data.delta.content);
+                  // console.log("Text delta:", data.data.delta.content);
                   messages[messages.length - 1].content += data.data.delta.content;
                 } else if (data.data.delta.part_kind === "reasoning") {
-                  console.log("Reasoning delta:", data.data.delta.reasoning);
+                  // console.log("Reasoning delta:", data.data.delta.reasoning);
                   messages[messages.length - 1].reasoning += data.data.delta.reasoning;
                 }
                 //await appendContentWithDelay(data.data.delta.content, newMessages);;
@@ -483,7 +478,7 @@ function ChatWindow() {
   };
 
   const fetchMessageHistory = async (id: string = conversationId) => {
-    const url = new URL(`${HOST}/conversations/${id}/messages`);
+    const url = new URL(`${HOST}/api/v1/chats/conversations/${id}/messages`);
     try {
       // Import here to avoid circular dependency
       const { authFetch } = await import("@/lib/utils");
@@ -502,7 +497,7 @@ function ChatWindow() {
       const data = await response.json();
       // console.log(data.messages);
       const chatMessages = convertToChatMessages(data.messages);
-      console.log(chatMessages);
+      //console.log(chatMessages);
       // console.log(data);
       setMessages(chatMessages);
     } catch (error) {

@@ -3,6 +3,8 @@ import { AppSidebar } from "./components/app-sidebar";
 import { PWAInstallButton } from "./components/pwa-install-button";
 import { useEffect, useState, createContext, useContext } from "react";
 import { useIsMobile } from "./hooks/use-mobile";
+import { ModeToggle } from "./components/mode-toogle";
+import AvatarDropdown from "./components/avatar-dropdown";
 
 // Move interfaces outside the component
 interface Conversation {
@@ -50,7 +52,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      const response = await authFetch(`${HOST}/users/${user.uid}/conversations`);
+      const response = await authFetch(`${HOST}/api/v1/chats/users/${user.uid}/conversations`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -74,22 +76,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <ChatContext.Provider value={{ chats, fetchConversations }}>
       <SidebarProvider>
-        <AppSidebar/>
-        <main className="flex flex-col h-screen w-full">
-          <header className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors [&_svg:not([class*='size-'])]:size-7! md:[&_svg:not([class*='size-'])]:size-5!">
-              </SidebarTrigger>
-              <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200 md:text-lg">
-                NCA Assistant
-              </h1>
+        <div className="flex h-screen w-full">
+          <AppSidebar/>
+          <main className="flex flex-col flex-1 h-screen overflow-hidden">
+            <header className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors [&_svg:not([class*='size-'])]:size-7! md:[&_svg:not([class*='size-'])]:size-5!">
+                </SidebarTrigger>
+                <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200 md:text-lg">
+                  NCA Assistant
+                </h1>
+              </div>
+              <div className="flex items-center gap-3">
+                <ModeToggle />
+                <AvatarDropdown />
+              </div>
+              {isMobile && (
+                <PWAInstallButton className="ml-auto" />
+              )}
+            </header>
+            <div className="flex-1 overflow-auto">
+              {children}
             </div>
-            {isMobile && (
-              <PWAInstallButton className="ml-auto" />
-            )}
-          </header>
-          {children}
-        </main>
+          </main>
+        </div>
       </SidebarProvider>
     </ChatContext.Provider>
   );

@@ -4,7 +4,7 @@ import argparse
 
 def whitelist_user(uid: str) -> None:
     """
-    Whitelist a user by setting their custom claims in Firebase Auth.
+    Add whitelisted role to a user's custom claims in Firebase Auth.
     
     Args:
         uid: The user ID to whitelist
@@ -16,16 +16,25 @@ def whitelist_user(uid: str) -> None:
             cred = credentials.Certificate(get_firebase_credentials())
             firebase_admin.initialize_app(cred)
 
-        # Set the custom claim
-        auth.set_custom_user_claims(uid, {'whitelisted': True})
-        print(f"Success: User {uid} has been whitelisted.")
+        # Get current user claims
+        user = auth.get_user(uid)
+        current_claims = user.custom_claims or {}
+        current_roles = current_claims.get('roles', [])
+
+        # Add whitelisted role if not already present
+        if 'whitelisted' not in current_roles:
+            current_roles.append('whitelisted')
+            auth.set_custom_user_claims(uid, {'roles': current_roles})
+            print(f"Success: User {uid} has been whitelisted.")
+        else:
+            print(f"User {uid} is already whitelisted.")
     
     except Exception as e:
         print(f"Error: Failed to whitelist user. {str(e)}")
 
 def unwhitelist_user(uid: str) -> None:
     """
-    Remove whitelist status from a user by setting their custom claims in Firebase Auth.
+    Remove whitelisted role from a user's custom claims in Firebase Auth.
     
     Args:
         uid: The user ID to unwhitelist
@@ -37,9 +46,18 @@ def unwhitelist_user(uid: str) -> None:
             cred = credentials.Certificate(get_firebase_credentials())
             firebase_admin.initialize_app(cred)
 
-        # Remove the custom claim by setting it to False
-        auth.set_custom_user_claims(uid, {'whitelisted': False}) 
-        print(f"Success: User {uid} has been unwhitelisted.")
+        # Get current user claims
+        user = auth.get_user(uid)
+        current_claims = user.custom_claims or {}
+        current_roles = current_claims.get('roles', [])
+
+        # Remove whitelisted role if present
+        if 'whitelisted' in current_roles:
+            current_roles.remove('whitelisted')
+            auth.set_custom_user_claims(uid, {'roles': current_roles})
+            print(f"Success: User {uid} has been unwhitelisted.")
+        else:
+            print(f"User {uid} is not whitelisted.")
     
     except Exception as e:
         print(f"Error: Failed to unwhitelist user. {str(e)}")

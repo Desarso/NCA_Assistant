@@ -4,13 +4,13 @@ import argparse
 
 def check_whitelist_status(uid: str) -> bool:
     """
-    Check if a user is whitelisted by checking their custom claims in Firebase Auth.
+    Check if a user is whitelisted by checking their roles in Firebase Auth custom claims.
     
     Args:
         uid: The user ID to check
         
     Returns:
-        bool: True if user is whitelisted, False otherwise
+        bool: True if user has whitelisted role, False otherwise
     """
     try:
         # Initialize Firebase Admin SDK if not already initialized
@@ -23,9 +23,13 @@ def check_whitelist_status(uid: str) -> bool:
         user = auth.get_user(uid)
         claims = user.custom_claims or {}
         
-        # Check if user is whitelisted
-        is_whitelisted = claims.get('whitelisted', False)
-        print(f"User {uid} whitelist status: {is_whitelisted}")
+        # Get roles array and check if whitelisted role is present
+        roles = claims.get('roles', [])
+        is_whitelisted = 'whitelisted' in roles
+        
+        # Print detailed status
+        print(f"User {uid} roles: {roles}")
+        print(f"Whitelisted status: {is_whitelisted}")
         return is_whitelisted
     
     except Exception as e:

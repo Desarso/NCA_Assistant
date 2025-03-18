@@ -5,7 +5,6 @@ import time
 # from pydantic_ai import agent_tool # Assuming you'll use agent_tool later, but not crucial for this core logic.
 from typing import Tuple, Optional, Dict, Any, List
 from helpers.RequestHelper import make_request
-from helpers.assistant_functions.team_functions import list_users_joined_team
 from helpers.assistant_functions.channel_functions import list_channels
 
 

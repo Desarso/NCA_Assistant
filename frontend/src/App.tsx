@@ -1,5 +1,5 @@
 import ChatWindow from "./aichat/pages/ChatWindow";
-import SettingsPage from "./aichat/pages/SettingsPage";
+import SettingsPage from "./pages/SettingsPage";
 import Login from "./pages/Login";
 import RequestWhitelist from "./pages/RequestWhitelist";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -8,6 +8,7 @@ import Layout from "./layout";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider } from "./lib/auth-context";
 import Animation from "./pages/Animation";
+import ProfilePage from "./pages/ProfilePage";
 
 function AppRoutes() {
   // const { setBiometricVerified } = useAuth();
@@ -52,6 +53,16 @@ function AppRoutes() {
             <PrivateRoute>
               <Layout>
                 <SettingsPage />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ProfilePage />
               </Layout>
             </PrivateRoute>
           }

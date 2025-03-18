@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, signOut } from '@/lib/firebase';
 
@@ -28,41 +27,26 @@ const SettingsPage = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out:', error);
-      alert('Failed to log out.');
-    }
-  };
-
   return (
-    <div className="bg-gray-900 min-h-screen">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-md w-screen h-screen">
+    <div className="h-full w-full p-4">
+      <div className="bg-card p-8 rounded-lg shadow-md h-full">
         <div className="flex items-center mb-4">
-          <Link to="/" className="mr-2 text-gray-400 hover:text-gray-200">
+          <Link to="/" className="mr-2 text-muted-foreground hover:text-foreground">
             {/* Back Arrow Icon */}
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         </div>
-        <p className="text-gray-300">This is the settings page.</p>
+        <p className="text-muted-foreground">This is the settings page.</p>
         <button
-          className="mt-4 bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded"
+          className="mt-4 bg-destructive hover:bg-destructive/90 text-white font-bold py-2 px-4 rounded"
           onClick={handleClearMemories}
         >
           Clear Memories
         </button>
-        <button
-          className="mt-4 ml-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
-          onClick={handleLogout}
-        >
-          Log Out
-        </button>
+
       </div>
     </div>
   );
