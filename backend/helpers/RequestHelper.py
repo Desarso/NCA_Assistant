@@ -137,11 +137,13 @@ def make_request(method: str, url: str, headers: Optional[Dict[str, str]] = None
         response = requests.request(method, url, headers=headers, json=json_data)
         response.raise_for_status()
         if response.status_code == 204:
-            return None, None # No content returned
+            return response.text, None # No content returned
         return response.json(), None # Return json and no error
 
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")
+        if response.text:
+            return response.text, {"error": "Request failed", "details": str(e)}
         return None, {"error": "Request failed", "details": str(e)}
     except json.JSONDecodeError as e:
         logging.error(f"Failed to decode JSON: {e}")

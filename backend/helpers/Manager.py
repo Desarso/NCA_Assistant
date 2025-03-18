@@ -21,7 +21,13 @@ from helpers.assistant_functions.user_functions import (
     update_user_job_title,
     update_user_email,
     delete_user,
-    get_user_team_channel_memberships,
+    get_user_teams,
+    get_user_channels,
+    get_user_licenses,
+    list_available_licenses,
+    add_license_to_user,
+    set_user_usage_location,
+    remove_license_from_user,
 )
 from helpers.assistant_functions.channel_functions import (
     create_standard_channel,
@@ -35,10 +41,12 @@ from helpers.assistant_functions.team_functions import (
     list_team_members,
     delete_team,
     search_teams,
-    list_users_joined_team,
+    
 )
 from custom.models.groq import GroqModel
 from custom.providers.groq import GroqProvider
+from custom.models.gemini import GeminiModel
+from custom.providers.google_gla import GoogleGLAProvider
 # Remove unused import
 # from helpers.assistant_functions.team_functions import *
 
@@ -52,23 +60,49 @@ tenant_id = os.getenv("TENANT_ID")
 client_id = os.getenv("APP_ID")
 client_secret = os.getenv("SECRET")
 
-# model = GeminiModel(
-#     "gemini-2.0-pro-exp-02-05", provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
+model = GeminiModel(
+    "gemini-2.0-flash", 
+    provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
+)
+
+
+
+# groq_model = GroqModel(
+#     "deepseek-r1-distill-llama-70b", provider=GroqProvider(
+#         api_key=os.getenv("GROQ_API_KEY")
+#         )
 # )
 
+tools = """
+**Available Tools:**
 
+You have access to the following tools provided by the `GraphManager` class:
 
-groq_model = GroqModel(
-    "deepseek-r1-distill-llama-70b", provider=GroqProvider(
-        api_key=os.getenv("GROQ_API_KEY")
-        )
-)
+*   `create_user`: Creates a new user.
+*   `list_users`: Lists all users.
+*   `create_team`: Creates a new team.
+*   `add_user_to_team`: Adds a user to a team.
+*   `list_teams`: Lists all teams.
+*   `list_team_members`: Lists members of a team.
+*   `search_users`: Searches for users.
+*   `get_user`: Gets details for a specific user.
+*   `update_user`: Updates a user's properties.
+*   `get_user_licenses`: Gets licenses for a specific user.
+*   `delete_user`: Deletes a user.
+*   `delete_team`: Deletes a team.
+*   `search_teams`: Searches for teams.
+*   `create_channel`: Creates a new channel.
+*   `list_channels`: Lists channels within a team.
+*   `delete_channel`: Deletes a channel.
+*   `python_interpreter`: Executes Python code.
+*   `duckduckgo_search`: Searches the web.
+"""
 
 
 
 # Create an agent with your tools
 agent = Agent(
-    model=groq_model,
+    model=model,
     system_prompt="""
 **Prompt for IT Agent:**
 
@@ -88,27 +122,6 @@ Do not give the user unnecessary information. Do not refuse the users request un
 *   **Understand Tools thoroughly:** Study and comprehend the functionalities and parameters of each available tool. Understanding the tool's capabilities is essential to executing tasks accurately and minimizing potential errors.
 *   **Be clear:** When generating information to the user you should ensure that the information is easily understood and precise.
 
-**Available Tools:**
-
-You have access to the following tools provided by the `GraphManager` class:
-
-*   `create_user`: Creates a new user.
-*   `list_users`: Lists all users.
-*   `create_team`: Creates a new team.
-*   `add_user_to_team`: Adds a user to a team.
-*   `list_teams`: Lists all teams.
-*   `list_team_members`: Lists members of a team.
-*   `search_users`: Searches for users.
-*   `get_user`: Gets details for a specific user.
-*   `update_user`: Updates a user's properties.
-*   `delete_user`: Deletes a user.
-*   `delete_team`: Deletes a team.
-*   `search_teams`: Searches for teams.
-*   `create_channel`: Creates a new channel.
-*   `list_channels`: Lists channels within a team.
-*   `delete_channel`: Deletes a channel.
-*   `python_interpreter`: Executes Python code.
-*   `duckduckgo_search`: Searches the web.
 
 **Workflow:**
 
@@ -219,7 +232,13 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         update_user_job_title,
         update_user_email,
         delete_user,
-        get_user_team_channel_memberships,
+        get_user_teams,
+        get_user_channels,
+        get_user_licenses,
+        list_available_licenses,
+        add_license_to_user,
+        set_user_usage_location,
+        remove_license_from_user,
         # Channel Functions
         create_standard_channel,
         create_private_channel,
@@ -231,7 +250,6 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         list_team_members,
         delete_team,
         search_teams,
-        list_users_joined_team,
     ],
 )
 

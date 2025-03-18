@@ -161,7 +161,6 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
     .map((message) => {
       try {
         const parsed = JSON.parse(message.content);
-        // console.log(parsed);
 
         // Handle model requests
         if (parsed.type === "model_request") {
@@ -197,22 +196,23 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
           };
 
           for (const part of parsed.parts) {
+            // console.log("part", part);
             if (part.type === "TextPart") {
-              result.content = part.content;
+              result.content += part.content;
             }
             if (part.type === "ReasoningPart") {
-              result.reasoning = part.content;
-              return result;
+              result.reasoning += part.content
+            }
+            if (parsed.parts[0].type === "ToolCallPart") {
+              return {
+                role: "tool_call",
+                content: JSON.stringify(parsed.parts[0].content),
+              };
             }
           }
+
+          return result;  
           
-          if (parsed.parts[0].type === "ToolCallPart") {
-            return {
-              role: "tool_call",
-              content: JSON.stringify(parsed.parts[0].content),
-            };
-          }
-          return null;  
         }
 
         return null;

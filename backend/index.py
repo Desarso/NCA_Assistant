@@ -464,7 +464,7 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
                 )
             )
         elif part_data["type"] == "ToolReturnPart":
-            print(part_data)
+            # print(part_data)
             # Save part_data to file for debugging
             with open('part_data.json', 'w') as f:
                 json.dump(part_data, f, indent=2)
@@ -583,12 +583,13 @@ async def chat(
                                         "data: " + event_to_json_string(event) + "\n\n"
                                     )
                     # Save the complete message
-                    print(node.request)
+                    # print(node.request)
                     db_message = DBMessage(
                         content=json.dumps(model_message_to_dict(node.request)),
                         is_user_message=False,
                         conversation_id=conversation_id,
                     )
+                    # print("db_message", db_message)
                     session.add(db_message)
                     session.commit()
                 elif agent.is_call_tools_node(node):
@@ -596,11 +597,14 @@ async def chat(
                         async for event in handle_stream:
                             # print("tool call", event)
                             yield "data: " + event_to_json_string(event) + "\n\n"
+
+                    # print(node.model_response)
                     db_message = DBMessage(
                         content=json.dumps(model_message_to_dict(node.model_response)),
                         is_user_message=False,
                         conversation_id=conversation_id,
                     )
+                    # print("db_message", db_message)
 
                     session.add(db_message)
                     session.commit()
