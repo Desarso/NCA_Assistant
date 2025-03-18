@@ -88,7 +88,7 @@ async def gemini(prompt: str) -> str:
         system_prompt="Based on the user's prompt, generate a title for the conversation. The title should be a single sentence that captures the essence of the conversation. The title should be no more than 10 words.",
     )
     response = await agent.run(prompt)
-    print(response, "\n")
+    # print(response, "\n")
     return response.data
 
 
@@ -377,9 +377,21 @@ def model_message_to_dict(message: Union[ModelRequest, ModelResponse]) -> dict:
             }
         elif isinstance(part, ReasoningPart):
             content = part.reasoning
-        else:
+        elif isinstance(part, UserPromptPart):
             content = part.content
-
+        elif isinstance(part, TextPart):
+            content = part.content
+        elif isinstance(part, SystemPromptPart):
+            content = part.content
+        elif isinstance(part, RetryPromptPart):
+            content = part.content
+        elif isinstance(part, ToolReturnPart):
+            # print("I am here", part)
+            content = {
+                "name": part.tool_name,
+                "content": part.content,
+                "tool_call_id": part.tool_call_id,
+            }
         return {
             "type": part.__class__.__name__,
             "content": content,
@@ -407,6 +419,7 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
     parts = []
     for part_data in data["parts"]:
         if part_data["type"] == "ToolCallPart":
+            # print(part_data)
             parts.append(
                 ToolCallPart(
                     tool_name=part_data["content"].get("name"),
@@ -451,6 +464,10 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
                 )
             )
         elif part_data["type"] == "ToolReturnPart":
+            print(part_data)
+            # Save part_data to file for debugging
+            with open('part_data.json', 'w') as f:
+                json.dump(part_data, f, indent=2)
             parts.append(
                 ToolReturnPart(
                     tool_name=part_data["content"].get("name"),
@@ -566,6 +583,7 @@ async def chat(
                                         "data: " + event_to_json_string(event) + "\n\n"
                                     )
                     # Save the complete message
+                    print(node.request)
                     db_message = DBMessage(
                         content=json.dumps(model_message_to_dict(node.request)),
                         is_user_message=False,
@@ -890,4 +908,4 @@ async def get_current_user_info(current_user: FirebaseUser = Depends(get_current
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("index:app", host="0.0.0.0", port=8000)
+    uvicorn.run("index:app", host="0.0.0.0", port=8000, reload=True)
