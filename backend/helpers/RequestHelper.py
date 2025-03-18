@@ -40,6 +40,7 @@ def refresh_token() -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
         expires_in = data.get("expires_in")  # Get token lifetime
 
         if not token:
+            print(response.text)
             logging.error("Failed to get token: " + response.text)
             return None, {"error": "Failed to get token", "details": response.text}
 
