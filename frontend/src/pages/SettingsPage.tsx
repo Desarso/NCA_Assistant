@@ -1,9 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { auth, signOut } from '@/lib/firebase';
+import { Link } from 'react-router-dom';
 
 const SettingsPage = () => {
   const HOST = import.meta.env.VITE_CHAT_HOST;
-  const navigate = useNavigate();
 
   const handleClearMemories = async () => {
     const url = new URL(`${HOST}/chat/history`);

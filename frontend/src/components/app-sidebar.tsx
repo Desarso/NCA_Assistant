@@ -1,6 +1,5 @@
 import {
   MessageSquare,
-  Settings,
 } from "lucide-react";
 
 import {
@@ -17,34 +16,34 @@ import {
 import { Link } from "react-router-dom";
 import { useChatContext } from "@/layout";
 
-// Menu items.
-const items = [
-  // {
-  //   title: "Home",
-  //   url: "#",
-  //   icon: Home,
-  // },
-  // {
-  //   title: "Inbox",
-  //   url: "#",
-  //   icon: Inbox,
-  // },
-  // {
-  //   title: "Calendar",
-  //   url: "#",
-  //   icon: Calendar,
-  // },
-  // {
-  //   title: "Search",
-  //   url: "#",
-  //   icon: Search,
-  // },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
-];
+// // Menu items.
+// const items = [
+//   // {
+//   //   title: "Home",
+//   //   url: "#",
+//   //   icon: Home,
+//   // },
+//   // {
+//   //   title: "Inbox",
+//   //   url: "#",
+//   //   icon: Inbox,
+//   // },
+//   // {
+//   //   title: "Calendar",
+//   //   url: "#",
+//   //   icon: Calendar,
+//   // },
+//   // {
+//   //   title: "Search",
+//   //   url: "#",
+//   //   icon: Search,
+//   // },
+//   {
+//     title: "Settings",
+//     url: "/settings",
+//     icon: Settings,
+//   },
+// ];
 
 
 
