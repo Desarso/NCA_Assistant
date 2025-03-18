@@ -21,6 +21,11 @@ _token_lock = threading.Lock()
 
 
 def refresh_token() -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+
+    # print credentials
+    print("tenant_id", tenant_id)
+    print("client_id", client_id)
+    print("client_secret", client_secret)
     """Refreshes the access token for Microsoft Graph API"""
     global _token, _headers, _token_expiry
 
