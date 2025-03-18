@@ -613,7 +613,7 @@ function ChatWindow() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 w-full">
+          <div className="border-t md:border md:rounded-lg md:mb-4 md:shadow-md border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 w-full md:max-w-[900px]">
             <ChatInput 
               onSubmit={handleSubmit}
               gettingResponse={gettingResponse}
