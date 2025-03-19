@@ -41,7 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idTokenResult = await user.getIdTokenResult(true);
 
           console.log("idTokenResult", idTokenResult);
-          
+
+          // check if user has role whitelisted 
+          // const whitelisted = idTokenResult.claims.role === "whitelisted";
           // Check if user has the whitelisted claim
           // const whitelisted = !!idTokenResult.claims.whitelisted;
           // setIsWhitelisted(whitelisted);
