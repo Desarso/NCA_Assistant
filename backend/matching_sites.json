@@ -1,0 +1,62 @@
+[
+    {
+        "createdDateTime": "2022-12-13T11:55:18Z",
+        "id": "novastonecapital.sharepoint.com,fd2832b5-6856-4375-943a-61d4571dcdb5,063b0fbf-d7d6-4a1d-bb10-9cc756e8164f",
+        "name": "NCA SF 037 \u2013 Erika O'Brien - Marketing",
+        "webUrl": "https://novastonecapital.sharepoint.com/sites/NCASF37ErikaOBrien-Marketing",
+        "displayName": "NCA SF 037 \u2013 Erika O'Brien - Marketing",
+        "isPersonalSite": false,
+        "siteCollection": {
+            "hostname": "novastonecapital.sharepoint.com"
+        },
+        "root": {}
+    },
+    {
+        "createdDateTime": "2022-07-17T14:25:52Z",
+        "id": "novastonecapital.sharepoint.com,ba63f46d-dcef-401a-8af7-6fb472fdde4a,04d7bc7a-5897-4aef-9ead-ff4d6e4aa348",
+        "name": "NCA SF 037 \u2013 Erika O'Brien - Erika OBrien \u2013 Legal Docs",
+        "webUrl": "https://novastonecapital.sharepoint.com/sites/NCASF37ErikaOBrien-ErikaOBrienLegalDocs",
+        "displayName": "NCA SF 037 \u2013 Erika O'Brien - Erika OBrien \u2013 Legal Docs",
+        "isPersonalSite": false,
+        "siteCollection": {
+            "hostname": "novastonecapital.sharepoint.com"
+        },
+        "root": {}
+    },
+    {
+        "createdDateTime": "2022-08-04T18:34:46Z",
+        "id": "novastonecapital.sharepoint.com,9dca1a7f-86bf-4880-b5bf-ab6174b98202,1a5ede98-2026-453b-a265-66075f265a0e",
+        "name": "NCA SF 037 \u2013 Erika O'Brien - Deals",
+        "webUrl": "https://novastonecapital.sharepoint.com/sites/NCASF37ErikaOBrien-Deals",
+        "displayName": "NCA SF 037 \u2013 Erika O'Brien - Deals",
+        "isPersonalSite": false,
+        "siteCollection": {
+            "hostname": "novastonecapital.sharepoint.com"
+        },
+        "root": {}
+    },
+    {
+        "createdDateTime": "2022-07-18T22:51:11Z",
+        "id": "novastonecapital-my.sharepoint.com,d07e69fe-ff80-46c4-b3f6-68f996cf905c,c4a7b127-0431-4f9b-ae74-9b403daf95d5",
+        "name": "Erika O'Brien",
+        "webUrl": "https://novastonecapital-my.sharepoint.com/personal/erika_obrien_novastone-ca_com",
+        "displayName": "Erika O'Brien",
+        "isPersonalSite": true,
+        "siteCollection": {
+            "hostname": "novastonecapital-my.sharepoint.com"
+        },
+        "root": {}
+    },
+    {
+        "createdDateTime": "2022-07-17T14:15:20Z",
+        "id": "novastonecapital.sharepoint.com,467ea8d9-8fd7-4f30-8aab-bb69fd13db09,45941b00-49e0-40ec-bf2f-7d7e772ef9c1",
+        "name": "NCA SF 37 \u2013 Erika O'Brien",
+        "webUrl": "https://novastonecapital.sharepoint.com/sites/NCASF37ErikaO%27Brien",
+        "displayName": "NCA SF 37 \u2013 Erika O'Brien",
+        "isPersonalSite": false,
+        "siteCollection": {
+            "hostname": "novastonecapital.sharepoint.com"
+        },
+        "root": {}
+    }
+]

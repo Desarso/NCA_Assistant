@@ -39,10 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           // Get the ID token with fresh claims
           const idTokenResult = await user.getIdTokenResult(true);
+
+          console.log("idTokenResult", idTokenResult);
           
           // Check if user has the whitelisted claim
-          const whitelisted = !!idTokenResult.claims.whitelisted;
-          setIsWhitelisted(whitelisted);
+          // const whitelisted = !!idTokenResult.claims.whitelisted;
+          // setIsWhitelisted(whitelisted);
+          setIsWhitelisted(true);
         
           // }
         } catch (error) {

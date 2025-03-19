@@ -10,7 +10,7 @@ import sys
 import subprocess
 import tempfile
 from custom.common_tools.duckduckgo import duckduckgo_search_tool
-from helpers.assistant_functions.user_functions import (
+from ai.assistant_functions.user_functions import (
     create_user,
     list_users,
     add_user_to_team,
@@ -29,13 +29,13 @@ from helpers.assistant_functions.user_functions import (
     set_user_usage_location,
     remove_license_from_user,
 )
-from helpers.assistant_functions.channel_functions import (
+from ai.assistant_functions.channel_functions import (
     create_standard_channel,
     create_private_channel,
     list_channels,
     delete_channel,
 )
-from helpers.assistant_functions.team_functions import (
+from ai.assistant_functions.team_functions import (
     create_team,
     list_teams,
     list_team_members,
@@ -43,8 +43,13 @@ from helpers.assistant_functions.team_functions import (
     search_teams,
     
 )
-from custom.models.groq import GroqModel
-from custom.providers.groq import GroqProvider
+
+from ai.assistant_functions.sharepoint_functions import (
+    search_sharepoint_sites,
+    traverse_sharepoint_directory_by_item_id,
+    search_sharepoint_graph,
+)
+
 from custom.models.gemini import GeminiModel
 from custom.providers.google_gla import GoogleGLAProvider
 # Remove unused import
@@ -250,6 +255,10 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         list_team_members,
         delete_team,
         search_teams,
+        # Sharepoint Functions
+        search_sharepoint_sites,
+        traverse_sharepoint_directory_by_item_id,
+        search_sharepoint_graph,
     ],
 )
 
