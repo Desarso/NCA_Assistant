@@ -24,3 +24,6 @@ NCA Assistant is a specialized tool built for the Microsoft ecosystem, focusing 
 - [ ] Add email parsing and suggestions
     - [ ] Display email
     - [ ] Notifications take you to in app suggested actions
+
+
+
