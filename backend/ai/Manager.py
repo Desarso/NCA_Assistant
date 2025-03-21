@@ -9,7 +9,6 @@ from typing import Tuple, Optional, Dict, Any
 import sys
 import subprocess
 import tempfile
-from custom.common_tools.duckduckgo import duckduckgo_search_tool
 from ai.assistant_functions.user_functions import (
     create_user,
     list_users,
@@ -31,8 +30,8 @@ from ai.assistant_functions.user_functions import (
     enforce_mfa_for_user,
     reset_user_password,
     get_user_password_methods,
-    disable_user_account,
-    enable_user_account,
+    block_sign_in,
+    unblock_sign_in,
 )
 from ai.assistant_functions.channel_functions import (
     create_standard_channel,
@@ -57,6 +56,7 @@ from ai.assistant_functions.sharepoint_functions import (
 
 from custom.models.gemini import GeminiModel
 from custom.providers.google_gla import GoogleGLAProvider
+from custom.common_tools.tavily import tavily_search_tool
 # Remove unused import
 # from helpers.assistant_functions.team_functions import *
 
@@ -69,7 +69,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 tenant_id = os.getenv("TENANT_ID")
 client_id = os.getenv("APP_ID")
 client_secret = os.getenv("SECRET")
+tavily_api_key = os.getenv("TAVILY_API_KEY")
 
+assert tavily_api_key is not None
 model = GeminiModel(
     "gemini-2.0-flash", 
     provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
@@ -105,7 +107,6 @@ You have access to the following tools provided by the `GraphManager` class:
 *   `list_channels`: Lists channels within a team.
 *   `delete_channel`: Deletes a channel.
 *   `python_interpreter`: Executes Python code.
-*   `duckduckgo_search`: Searches the web.
 """
 
 
@@ -121,6 +122,9 @@ You are more than capable of generating code for the user.
 "You are an AI assistant with access to powerful Microsoft Graph API tools. Your primary goal is to make the life of the user easier. You will be given a prompt and you will need to use the tools provided to you to help the user.
 
 Do not give the user unnecessary information. Do not refuse the users request unless you are completely incapable of helping them.
+If you are unable to help the user instead of just saying you can't help them, you must give them some advice on how they can do it themselves.
+If you have no information on how to help the user you must make a search using the tavily search tool. NEVER ask the user if they would like to use tavily_search, only refer to the tool as simply "search"
+If the user asks you anything that can only be answered by a search, do not ask them if you should search, just do it.
 
 **Important Guidelines:**
 
@@ -230,7 +234,7 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
 """
 ,
     tools=[
-        duckduckgo_search_tool(),
+        tavily_search_tool(tavily_api_key),
         # User Functions
         create_user,
         list_users,
@@ -252,8 +256,8 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         enforce_mfa_for_user,
         reset_user_password,
         get_user_password_methods,
-        disable_user_account,
-        enable_user_account,
+        block_sign_in,
+        unblock_sign_in,
         # Channel Functions
         create_standard_channel,
         create_private_channel,

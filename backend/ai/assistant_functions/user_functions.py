@@ -980,7 +980,7 @@ def get_user_password_methods(
         return None, {"error": "Unexpected error getting password methods", "details": str(e)}
 
 
-def disable_user_account(
+def block_sign_in(
     ctx: RunContext, user_id: str
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
@@ -995,7 +995,7 @@ def disable_user_account(
         or None and error details if failed.
     """
     start_time = time.time()
-    logging.info(f"Starting disable_user_account function for user {user_id}")
+    logging.info(f"Starting block_sign_in function for user {user_id}")
     
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
     payload = {
@@ -1006,30 +1006,30 @@ def disable_user_account(
         response, error = make_request("PATCH", url, json_data=payload)
         
         if error:
-            logging.error(f"Failed to disable account for user {user_id}: {error}")
+            logging.error(f"Failed to block sign in for user {user_id}: {error}")
             end_time = time.time()
             logging.info(
-                f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+                f"block_sign_in function completed in {end_time - start_time:.2f} seconds"
             )
             return None, error
         
-        logging.info(f"Successfully disabled account for user {user_id}")
+        logging.info(f"Successfully blocked sign in for user {user_id}")
         end_time = time.time()
         logging.info(
-            f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+            f"block_sign_in function completed in {end_time - start_time:.2f} seconds"
         )
         
         return response, None
     except Exception as e:
-        logging.exception(f"Unexpected error disabling account for user {user_id}: {e}")
+        logging.exception(f"Unexpected error blocking sign in for user {user_id}: {e}")
         end_time = time.time()
         logging.info(
-            f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+            f"block_sign_in function completed in {end_time - start_time:.2f} seconds"
         )
-        return None, {"error": "Unexpected error disabling account", "details": str(e)}
+        return None, {"error": "Unexpected error blocking sign in", "details": str(e)}
 
 
-def enable_user_account(
+def unblock_sign_in(
     ctx: RunContext, user_id: str
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
@@ -1044,7 +1044,7 @@ def enable_user_account(
         or None and error details if failed.
     """
     start_time = time.time()
-    logging.info(f"Starting enable_user_account function for user {user_id}")
+    logging.info(f"Starting unblock_sign_in function for user {user_id}")
     
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
     payload = {
@@ -1055,26 +1055,25 @@ def enable_user_account(
         response, error = make_request("PATCH", url, json_data=payload)
         
         if error:
-            logging.error(f"Failed to enable account for user {user_id}: {error}")
+            logging.error(f"Failed to unblock sign in for user {user_id}: {error}")
             end_time = time.time()
             logging.info(
-                f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+                f"unblock_sign_in function completed in {end_time - start_time:.2f} seconds"
             )
             return None, error
         
-        logging.info(f"Successfully enabled account for user {user_id}")
+        logging.info(f"Successfully unblocked sign in for user {user_id}")
         end_time = time.time()
         logging.info(
-            f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+            f"unblock_sign_in function completed in {end_time - start_time:.2f} seconds"
         )
         
         return response, None
     except Exception as e:
-        logging.exception(f"Unexpected error enabling account for user {user_id}: {e}")
+        logging.exception(f"Unexpected error unblocking sign in for user {user_id}: {e}")
         end_time = time.time()
         logging.info(
-            f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+            f"unblock_sign_in function completed in {end_time - start_time:.2f} seconds"
         )
-        return None, {"error": "Unexpected error enabling account", "details": str(e)}
-
+        return None, {"error": "Unexpected error unblocking sign in", "details": str(e)}
 

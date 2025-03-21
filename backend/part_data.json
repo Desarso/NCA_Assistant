@@ -1,10 +1,38 @@
 {
   "type": "ToolReturnPart",
   "content": {
-    "name": "reset_user_password",
+    "name": "tavily_search",
     "content": [
-      "",
-      null
+      {
+        "title": "SolidJS",
+        "url": "https://www.solidjs.com/",
+        "content": "Solid is a purely reactive library. It was designed from the ground up with a reactive core. It's influenced by reactive principles developed by previous libraries.",
+        "score": 0.8808076
+      },
+      {
+        "title": "What is SolidJS? Understanding the Modern Reactive Library",
+        "url": "https://www.wisp.blog/blog/what-is-solidjs-understanding-the-modern-reactive-library",
+        "content": "SolidJS: SolidJS introduces reactive primitives such as createSignal for state management and createEffect for side effects. These primitives are designed to be more intuitive and efficient, automatically tracking dependencies and optimizing updates without additional effort from developers.",
+        "score": 0.8657814
+      },
+      {
+        "title": "Solid Docs",
+        "url": "https://docs.solidjs.com/",
+        "content": "Documentation for SolidJS, the signals-powered UI framework. Advantages of using Solid. Performant: Fine-grained reactivity allows Solid to update only what has changed, resulting in faster load times and smoother performance overall.. Powerful: Using less memory and processing power, Solid is capable of creating complex applications without compromising on functionality.",
+        "score": 0.70214266
+      },
+      {
+        "title": "What is Solid JS? - Medium",
+        "url": "https://medium.com/eincode/what-is-solid-js-e32f03048936",
+        "content": "www.solidjs.com. The website contains basic to advance tutorials with practical examples. It also lists full API docs to get information about all features of Solid JS.",
+        "score": 0.6778372
+      },
+      {
+        "title": "SolidJS vs. React: The Go-to Guide - Toptal",
+        "url": "https://www.toptal.com/react/solidjs-vs-react",
+        "content": "In SolidJS, this concept is known as signal, and its corresponding creation function is createSignal. States and signals house component data (in the form of props), enabling the framework to track value changes. And when the framework detects a change, the component is rendered with the according value(s).",
+        "score": 0.6519982
+      }
     ],
     "tool_call_id": null
   },
