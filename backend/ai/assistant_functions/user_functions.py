@@ -1,3 +1,4 @@
+import json
 from custom import RunContext
 import logging
 import time
@@ -13,6 +14,8 @@ def create_user(
     ctx: RunContext, display_name: str, user_principal_name: str, password: str
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """Creates a new user in Microsoft Azure AD.
+
+        After running this tool, ask the current user if they want to enforce MFA for this user.
 
     Args:
         display_name (str): The display name for the new user
@@ -702,7 +705,6 @@ def add_license_to_user(
             )
             print("response", response, error)
             if response:
-               
                 return response, error
             return None, error
 
@@ -740,22 +742,21 @@ def remove_license_from_user(
         if successful, or None and error details if failed.
     """
     start_time = time.time()
-    logging.info(f"Starting remove_license_from_user function for user {user_id} with SKU {sku_id}")
+    logging.info(
+        f"Starting remove_license_from_user function for user {user_id} with SKU {sku_id}"
+    )
 
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}/assignLicense"
-    payload = {
-        "addLicenses": [],
-        "removeLicenses": [
-            sku_id
-        ]
-    }
-        
+    payload = {"addLicenses": [], "removeLicenses": [sku_id]}
+
     try:
         response, error = make_request("POST", url, json_data=payload)
         if error:
-            logging.error(f"Failed to remove license {sku_id} from user {user_id}: {error}")
+            logging.error(
+                f"Failed to remove license {sku_id} from user {user_id}: {error}"
+            )
             return None, error
-        
+
         logging.info(f"Successfully removed license {sku_id} from user {user_id}")
         end_time = time.time()
         logging.info(
@@ -766,7 +767,9 @@ def remove_license_from_user(
             return response, None
         return None, error
     except Exception as e:
-        logging.exception(f"Unexpected error removing license {sku_id} from user {user_id}: {e}")
+        logging.exception(
+            f"Unexpected error removing license {sku_id} from user {user_id}: {e}"
+        )
         end_time = time.time()
         logging.info(
             f"remove_license_from_user function completed in {end_time - start_time:.2f} seconds"
@@ -774,28 +777,24 @@ def remove_license_from_user(
         return None, {"error": "Unexpected error removing license", "details": str(e)}
 
 
-
-
 def set_user_usage_location(
     ctx: RunContext, user_id: str, usage_location: str
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
     Sets the usage location for a user in Azure AD.
-    
+
     Args:
         ctx (RunContext): The context containing configuration and state.
         user_id (str): The user's ID or userPrincipalName.
         usage_location (str): The ISO 3166-1 alpha-2 country code representing the usage location.
-        
+
     Returns:
         tuple: (response, error) where response is the result of the update if successful,
         or None and error details if failed.
     """
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
-    payload = {
-        "usageLocation": usage_location
-    }
-    
+    payload = {"usageLocation": usage_location}
+
     try:
         # Assuming make_request is a helper function that sends PATCH requests
         response, error = make_request("PATCH", url, json_data=payload)
@@ -804,35 +803,67 @@ def set_user_usage_location(
             if response:
                 return response, error
             return None, error
-        
-        logging.info(f"Successfully set usage location for user {user_id} to {usage_location}")
+
+        logging.info(
+            f"Successfully set usage location for user {user_id} to {usage_location}"
+        )
         return response, None
     except Exception as e:
-        logging.exception(f"Unexpected error setting usage location for user {user_id}: {e}")
-        return None, {"error": "Unexpected error setting usage location", "details": str(e)}
+        logging.exception(
+            f"Unexpected error setting usage location for user {user_id}: {e}"
+        )
+        return None, {
+            "error": "Unexpected error setting usage location",
+            "details": str(e),
+        }
 
-# def get_user_team_channel_memberships(
-#     ctx: RunContext, user_id: str
-# ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
-#     """
-#     Retrieves all Microsoft Teams and Channels that a user is a member of.
-#     This is a convenience function that combines get_user_teams and get_user_channels.
 
-#     Args:
-#         user_id (str): The user's ID or userPrincipalName.
+def enforce_mfa_for_user(
+    ctx: RunContext, user_id: str
+) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Enforces Multi-Factor Authentication (MFA) for a user in Azure AD.
+    
+    Args:
+        ctx (RunContext): The context containing configuration and state.
+        user_id (str): The user's ID or userPrincipalName.
+        
+    Returns:
+        tuple: (response, error) where response is the result of the operation if successful,
+        or None and error details if failed.
+    """
+    start_time = time.time()
+    logging.info(f"Starting enable_and_enforce_mfa function for user {user_id}")
+    
+    try:
+        # Enable MFA for the user using the beta endpoint
+        mfa_url = f"https://graph.microsoft.com/beta/users/{user_id}/authentication/requirements"
+        mfa_payload = {
+            "perUserMfaState": "enforced"
+        }
+        
+        mfa_response, mfa_error = make_request("PATCH", mfa_url, json_data=mfa_payload)
+        
 
-#     Returns:
-#         tuple: A tuple containing:
-#             - A dictionary: { "teams": [team_details], "channels": {team_id: [channel_details]} }.
-#             - An error dictionary if an error occurred, or None if successful.
-#     """
-#     user_teams, teams_error = get_user_teams(ctx, user_id)
-#     if teams_error:
-#         return None, teams_error
-
-#     user_channels, channels_error = get_user_channels(ctx, user_id)
-#     if channels_error:
-#         return None, channels_error
-
-#     result = {"teams": user_teams, "channels": user_channels}
-#     return result, None
+        if mfa_error:
+            logging.error(f"Failed to enable MFA for user {user_id}: {mfa_error}")
+            end_time = time.time()
+            logging.info(
+                f"enable_and_enforce_mfa function completed in {end_time - start_time:.2f} seconds"
+            )
+            return None, mfa_error
+        
+        logging.info(f"Successfully enabled MFA for user {user_id}")
+        end_time = time.time()
+        logging.info(
+            f"enable_and_enforce_mfa function completed in {end_time - start_time:.2f} seconds"
+        )
+        
+        return mfa_response, None
+    except Exception as e:
+        logging.exception(f"Unexpected error enabling MFA for user {user_id}: {e}")
+        end_time = time.time()
+        logging.info(
+            f"enable_and_enforce_mfa function completed in {end_time - start_time:.2f} seconds"
+        )
+        return None, {"error": "Unexpected error enabling MFA", "details": str(e)}

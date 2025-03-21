@@ -28,6 +28,7 @@ from ai.assistant_functions.user_functions import (
     add_license_to_user,
     set_user_usage_location,
     remove_license_from_user,
+    enforce_mfa_for_user,
 )
 from ai.assistant_functions.channel_functions import (
     create_standard_channel,
@@ -244,6 +245,7 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         add_license_to_user,
         set_user_usage_location,
         remove_license_from_user,
+        enforce_mfa_for_user,
         # Channel Functions
         create_standard_channel,
         create_private_channel,

@@ -1,13 +1,23 @@
 {
   "type": "ToolReturnPart",
   "content": {
-    "name": "search_sharepoint_graph",
+    "name": "create_user",
     "content": [
-      null,
       {
-        "error": "Unexpected error listing sites",
-        "details": "{'error': 'Request failed', 'details': '400 Client Error: Bad Request for url: https://graph.microsoft.com/v1.0/search/query'}"
-      }
+        "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users/$entity",
+        "id": "272f601a-a314-4171-9d3b-02f7758475af",
+        "businessPhones": [],
+        "displayName": "NCA_Assistant",
+        "givenName": null,
+        "jobTitle": null,
+        "mail": null,
+        "mobilePhone": null,
+        "officeLocation": null,
+        "preferredLanguage": null,
+        "surname": null,
+        "userPrincipalName": "NCA_Assistant@novastone-ca.com"
+      },
+      null
     ],
     "tool_call_id": null
   },
