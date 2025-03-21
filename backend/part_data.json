@@ -1,22 +1,9 @@
 {
   "type": "ToolReturnPart",
   "content": {
-    "name": "create_user",
+    "name": "reset_user_password",
     "content": [
-      {
-        "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users/$entity",
-        "id": "272f601a-a314-4171-9d3b-02f7758475af",
-        "businessPhones": [],
-        "displayName": "NCA_Assistant",
-        "givenName": null,
-        "jobTitle": null,
-        "mail": null,
-        "mobilePhone": null,
-        "officeLocation": null,
-        "preferredLanguage": null,
-        "surname": null,
-        "userPrincipalName": "NCA_Assistant@novastone-ca.com"
-      },
+      "",
       null
     ],
     "tool_call_id": null

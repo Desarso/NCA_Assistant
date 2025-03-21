@@ -667,6 +667,8 @@ def add_license_to_user(
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """
     Assigns a license to a user using Microsoft Graph.
+    If unable to add license then give the user this link to link them to the right page
+    https://admin.microsoft.com/#/users/:/UserDetails/{user_id}/LicensesAndApps
 
     Args:
         ctx (RunContext): The context containing configuration and state.
@@ -867,3 +869,212 @@ def enforce_mfa_for_user(
             f"enable_and_enforce_mfa function completed in {end_time - start_time:.2f} seconds"
         )
         return None, {"error": "Unexpected error enabling MFA", "details": str(e)}
+
+
+def reset_user_password(
+    ctx: RunContext, user_id: str, new_password: str, force_change_password_next_sign_in: bool = True
+) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Resets a user's password using Microsoft Graph API.
+    
+    Args:
+        ctx (RunContext): The context containing configuration and state.
+        user_id (str): The user's ID or userPrincipalName.
+        new_password (str): The new password to set.
+        force_change_password_next_sign_in (bool): Whether to force password change on next sign in.
+        
+    Returns:
+        tuple: (response, error) where response is the result of the password reset if successful,
+        or None and error details if failed.
+    """
+    start_time = time.time()
+    logging.info(f"Starting reset_user_password function for user {user_id}")
+    
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    payload = {
+        "passwordProfile": {
+            "password": new_password,
+            "forceChangePasswordNextSignIn": force_change_password_next_sign_in
+        }
+    }
+    
+    try:
+        response, error = make_request("PATCH", url, json_data=payload)
+
+        ##print response in full nice json format
+        print("response", json.dumps(response, indent=2))
+        
+        if error:
+            logging.error(f"Failed to reset password for user {user_id}: {error}")
+            end_time = time.time()
+            logging.info(
+                f"reset_user_password function completed in {end_time - start_time:.2f} seconds"
+            )
+            return None, error
+        
+        logging.info(f"Successfully reset password for user {user_id}")
+        end_time = time.time()
+        logging.info(
+            f"reset_user_password function completed in {end_time - start_time:.2f} seconds"
+        )
+        
+        return response, None
+    except Exception as e:
+        logging.exception(f"Unexpected error resetting password for user {user_id}: {e}")
+        end_time = time.time()
+        logging.info(
+            f"reset_user_password function completed in {end_time - start_time:.2f} seconds"
+        )
+        return None, {"error": "Unexpected error resetting password", "details": str(e)}
+
+
+def get_user_password_methods(
+    ctx: RunContext, user_id: str
+) -> Tuple[Optional[List[Dict[str, Any]]], Optional[Dict[str, Any]]]:
+    """
+    Retrieves all password methods for a user from Microsoft Graph API.
+    
+    Args:
+        ctx (RunContext): The context containing configuration and state.
+        user_id (str): The user's ID or userPrincipalName.
+        
+    Returns:
+        tuple: (password_methods, error) where password_methods is a list of password method details
+        if successful, or None and error details if failed.
+    """
+    start_time = time.time()
+    logging.info(f"Starting get_user_password_methods function for user {user_id}")
+    
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}/authentication/passwordMethods"
+    all_methods = []
+    
+    try:
+        while url:
+            response, error = make_request("GET", url)
+            
+            if error:
+                logging.error(f"Failed to get password methods for user {user_id}: {error}")
+                end_time = time.time()
+                logging.info(
+                    f"get_user_password_methods function completed in {end_time - start_time:.2f} seconds"
+                )
+                return None, error
+            
+            methods = response.get("value", [])
+            all_methods.extend(methods)
+            url = response.get("@odata.nextLink")
+        
+        logging.info(f"Successfully retrieved {len(all_methods)} password methods for user {user_id}")
+        end_time = time.time()
+        logging.info(
+            f"get_user_password_methods function completed in {end_time - start_time:.2f} seconds"
+        )
+        
+        return all_methods, None
+    except Exception as e:
+        logging.exception(f"Unexpected error getting password methods for user {user_id}: {e}")
+        end_time = time.time()
+        logging.info(
+            f"get_user_password_methods function completed in {end_time - start_time:.2f} seconds"
+        )
+        return None, {"error": "Unexpected error getting password methods", "details": str(e)}
+
+
+def disable_user_account(
+    ctx: RunContext, user_id: str
+) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Disables a user's account in Azure AD using Microsoft Graph API.
+    
+    Args:
+        ctx (RunContext): The context containing configuration and state.
+        user_id (str): The user's ID or userPrincipalName.
+        
+    Returns:
+        tuple: (response, error) where response is the result of the operation if successful,
+        or None and error details if failed.
+    """
+    start_time = time.time()
+    logging.info(f"Starting disable_user_account function for user {user_id}")
+    
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    payload = {
+        "accountEnabled": False
+    }
+    
+    try:
+        response, error = make_request("PATCH", url, json_data=payload)
+        
+        if error:
+            logging.error(f"Failed to disable account for user {user_id}: {error}")
+            end_time = time.time()
+            logging.info(
+                f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+            )
+            return None, error
+        
+        logging.info(f"Successfully disabled account for user {user_id}")
+        end_time = time.time()
+        logging.info(
+            f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+        )
+        
+        return response, None
+    except Exception as e:
+        logging.exception(f"Unexpected error disabling account for user {user_id}: {e}")
+        end_time = time.time()
+        logging.info(
+            f"disable_user_account function completed in {end_time - start_time:.2f} seconds"
+        )
+        return None, {"error": "Unexpected error disabling account", "details": str(e)}
+
+
+def enable_user_account(
+    ctx: RunContext, user_id: str
+) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """
+    Enables a user's account in Azure AD using Microsoft Graph API.
+    
+    Args:
+        ctx (RunContext): The context containing configuration and state.
+        user_id (str): The user's ID or userPrincipalName.
+        
+    Returns:
+        tuple: (response, error) where response is the result of the operation if successful,
+        or None and error details if failed.
+    """
+    start_time = time.time()
+    logging.info(f"Starting enable_user_account function for user {user_id}")
+    
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
+    payload = {
+        "accountEnabled": True
+    }
+    
+    try:
+        response, error = make_request("PATCH", url, json_data=payload)
+        
+        if error:
+            logging.error(f"Failed to enable account for user {user_id}: {error}")
+            end_time = time.time()
+            logging.info(
+                f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+            )
+            return None, error
+        
+        logging.info(f"Successfully enabled account for user {user_id}")
+        end_time = time.time()
+        logging.info(
+            f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+        )
+        
+        return response, None
+    except Exception as e:
+        logging.exception(f"Unexpected error enabling account for user {user_id}: {e}")
+        end_time = time.time()
+        logging.info(
+            f"enable_user_account function completed in {end_time - start_time:.2f} seconds"
+        )
+        return None, {"error": "Unexpected error enabling account", "details": str(e)}
+
+

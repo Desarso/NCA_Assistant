@@ -29,6 +29,10 @@ from ai.assistant_functions.user_functions import (
     set_user_usage_location,
     remove_license_from_user,
     enforce_mfa_for_user,
+    reset_user_password,
+    get_user_password_methods,
+    disable_user_account,
+    enable_user_account,
 )
 from ai.assistant_functions.channel_functions import (
     create_standard_channel,
@@ -246,6 +250,10 @@ NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if 
         set_user_usage_location,
         remove_license_from_user,
         enforce_mfa_for_user,
+        reset_user_password,
+        get_user_password_methods,
+        disable_user_account,
+        enable_user_account,
         # Channel Functions
         create_standard_channel,
         create_private_channel,
