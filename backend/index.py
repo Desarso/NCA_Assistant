@@ -179,4 +179,5 @@ app.include_router(user_routes)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("index:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("index:app", host="0.0.0.0", port=8000, reload=True, proxy_headers=True, forwarded_allow_ips="*")
+
