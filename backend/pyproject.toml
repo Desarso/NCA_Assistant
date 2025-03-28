@@ -17,5 +17,8 @@ dependencies = [
     "firebase-admin>=6.6.0",
     "cryptography>=44.0.2",
     "pydantic-ai>=0.0.41",
-    "mem0ai>=0.1.77",
+    "mem0ai[graph]>=0.1.77",
+    "litellm>=1.64.1",
+    "langchain-neo4j>=0.4.0",
+    "rank-bm25>=0.2.2",
 ]

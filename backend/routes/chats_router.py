@@ -71,6 +71,9 @@ async def chat(
 
     ##refresh system prompt
     memory = get_memory_no_context(request.state.user.uid, prompt)
+
+    print("memory", memory)
+
     if len(message_history) > 0:
         system_prompt = message_history[0].parts[0].content
         if system_prompt:
