@@ -527,17 +527,17 @@ function ChatWindow() {
             {messages.length > 0 &&
               messages[messages.length - 1].role === "tool_call" && (
                 <div className="md:max-w-[900px] w-full flex justify-start min-h-full">
-                  <span className="wave-text">
+                  <span className="wave-text ml-5 pl-4">
                     {((
                       messages[messages.length - 1].content as { name: string }
-                    ).name as string) || "Processing..."}
+                    ).name as string) || "processing..."}
                   </span>
                 </div>
               )}
             {messages.length > 0 &&
               messages[messages.length - 1].role === "tool_result" && (
                 <div className="md:max-w-[900px] w-full flex justify-start min-h-full">
-                  <span className="wave-text">processing...</span>
+                  <span className="wave-text ml-5 pl-4">processing...</span>
                 </div>
               )}
             <style>
