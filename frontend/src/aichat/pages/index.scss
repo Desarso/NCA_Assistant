@@ -556,3 +556,33 @@ body.dark {
     }
   }
 }
+
+@keyframes fadeInChunk {
+  from {
+    opacity: 0;
+    // Optional: add a slight transform for extra effect
+    // transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    // transform: translateY(0);
+  }
+}
+
+.fade-in-chunk {
+  display: inline; // Important to keep text flowing correctly
+  animation: fadeInChunk 0.5s ease-out forwards;
+}
+
+@keyframes fadeInLatestChunk {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.streaming-word-fade-in {
+  animation: fadeInLatestChunk 0.55s ease-out forwards;
+}

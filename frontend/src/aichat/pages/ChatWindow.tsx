@@ -9,134 +9,13 @@ import Prism from "prismjs";
 import "./index.css";
 // import 'prismjs/components/prism-python'
 import { Message } from "../models/models";
-import componentsJson from "./components.json";
 import MicrophoneVisualizer from "../../components/MicrophoneVisualizer";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useChatContext } from "@/layout";
 import { useParams } from "react-router-dom";
+import AssistantMessageRenderer from "../components/AssitantMessageRenderer";
 
-const components = componentsJson as any;
 const HOST = import.meta.env.VITE_CHAT_HOST;
-
-// Client-side language registry
-const loadedLanguages: { [key: string]: boolean } = {
-  markup: true, // HTML, XML, SVG, MathML...
-  HTML: true,
-  XML: true,
-  SVG: true,
-  MathML: true,
-  SSML: true,
-  Atom: true,
-  RSS: true,
-  css: true,
-  "c-like": true,
-  javascript: true, // IMPORTANT: Use 'javascript' not 'js'
-};
-
-const loadLanguage = async (language: string) => {
-  if (loadedLanguages[language]) {
-    return; // Already loaded
-  }
-
-  try {
-    const languageData = components.languages[language];
-
-    if (!languageData) {
-      console.warn(`Language "${language}" not found in components.json.`);
-      return;
-    }
-
-    // Load required languages recursively BEFORE loading the target language
-    if (languageData.require) {
-      const requirements = Array.isArray(languageData.require)
-        ? languageData.require
-        : [languageData.require];
-
-      for (const requirement of requirements) {
-        await loadLanguage(requirement);
-      }
-    }
-
-    // Import authFetch to add auth token to the request
-    const { authFetch } = await import("@/lib/utils");
-
-    const response = await authFetch(
-      `${HOST}/api/prism-language?name=${language}`
-    );
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch language "${language}": ${response.status}`
-      );
-    }
-    const scriptText = await response.text();
-
-    // Execute the script.  Important: This is where the Prism component is registered.
-    eval(scriptText); // VERY CAREFUL.  See security notes below.
-
-    loadedLanguages[language] = true;
-    Prism.highlightAll();
-  } catch (error) {
-    console.error(`Error loading language "${language}":`, error);
-    // Consider a fallback (e.g., plain text highlighting)
-  }
-};
-
-function CustomPre({ children }: any) {
-  const [copied, setCopied] = useState(false);
-  const codeContent = children?.props?.children?.toString() || "";
-  const language = children?.props?.className?.replace("language-", "") || "";
-
-  useEffect(() => {
-    // console.log(language, " detected")
-    if (language && !loadedLanguages[language]) {
-      loadLanguage(language); // Load the language if it's not already loaded.
-    }
-  }, [language]);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(codeContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative bg-gray-100 border border-gray-300 rounded-lg my-4 dark:bg-gray-800 dark:border-gray-600 p-0 m-0">
-      <button
-        onClick={handleCopy}
-        className="absolute top-2 right-2 text-gray-600 text-xs p-2 rounded hover:text-gray-800 transition flex items-center gap-1 dark:text-gray-400 dark:hover:text-gray-200"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`icon icon-tabler icons-tabler-outline icon-tabler-copy transition-all duration-200 ${
-            copied ? "scale-75" : "scale-100"
-          }`}
-        >
-          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-          <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
-          <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
-        </svg>
-        <span
-          className={`transition-all duration-200 ${
-            copied ? "text-sm" : "text-xs"
-          } dark:text-gray-400`}
-        >
-          {copied ? "Copied!" : "Copy"}
-        </span>
-      </button>
-      <pre className="overflow-x-auto dark:text-gray-100 p-4 whitespace-pre-wrap break-words">
-        {children}
-      </pre>
-    </div>
-  );
-}
 
 interface ChatMessage {
   role: string;
@@ -316,9 +195,18 @@ function ChatWindow() {
   const abortControllerRef = useRef<boolean>(false);
   const { fetchConversations } = useChatContext();
 
-  const scrollToBottom = async () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Ref to track if the *last* action was submitting a user message
+
+  function scrollToBottom() {
+    if (messagesEndRef.current) {
+      const scrollOptions: ScrollIntoViewOptions = {
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      };
+      messagesEndRef.current.scrollIntoView(scrollOptions);
+    }
+  }
 
   useEffect(() => {
     console.log("id", id);
@@ -333,7 +221,6 @@ function ChatWindow() {
   }, [id]);
 
   useEffect(() => {
-    scrollToBottom();
     Prism.highlightAll();
     console.log("messages", messages);
   }, [messages]);
@@ -345,6 +232,7 @@ function ChatWindow() {
       await fetchMessageHistory();
 
       Prism.highlightAll();
+      scrollToBottom();
     })();
   }, []);
 
@@ -360,7 +248,10 @@ function ChatWindow() {
 
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
-    await scrollToBottom();
+
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
 
     const url = new URL(`${HOST}/api/v1/chats/chat`);
     url.searchParams.append("prompt", text);
@@ -458,7 +349,7 @@ function ChatWindow() {
                     data.data.delta.reasoning;
                 }
               } else if (data.type === "tool_call") {
-                newToolCallMessage.content = data.data.tool_call; 
+                newToolCallMessage.content = data.data.tool_call;
                 updatedMessages.push(newToolCallMessage);
               } else if (data.type === "tool_result") {
                 newToolResultMessage.content = data.data.tool_result;
@@ -551,8 +442,20 @@ function ChatWindow() {
     setGettingResponse(false);
   };
 
+  useEffect(() => {
+    // height of last message must content he + 80% of parent height calculate then set as pixels
+    const lastMessage = document.getElementById("last-message");
+    if (lastMessage) {
+      const contentHeight = lastMessage.querySelector(".message-content")?.clientHeight ?? 0;
+      const parentHeight = lastMessage.clientHeight ?? 0;
+      const newHeight = contentHeight + parentHeight * 0.7;
+      lastMessage.style.height = `${newHeight}px`;
+    }
+
+  }, [messages]);
+
   return (
-    <div className="flex h-full w-full flex-col justify-center items-center bg-gray-50 dark:bg-gray-900 ">
+    <div className="flex w-full h-full flex-col justify-center items-center bg-gray-50 dark:bg-gray-900 ">
       {isListening ? (
         <div className="flex-1 flex items-center justify-center">
           <MicrophoneVisualizer
@@ -564,7 +467,7 @@ function ChatWindow() {
       ) : (
         <>
           <div
-            className={`flex-1 flex flex-col items-center overflow-y-auto p-4 space-y-6 Chat-Container 
+            className={`flex-1 flex flex-col items-center overflow-y-auto space-y-6 Chat-Container
             max-h-[calc(100vh-134px)] 
             md:max-h-[calc(100vh-136px)] 
             ${
@@ -576,27 +479,35 @@ function ChatWindow() {
                 ? "w-[calc(100vw-var(--sidebar-width))]"
                 : "w-full"
             }
+            ${messages.length === 0 ? "h-full" : ""}
             `}
           >
             {messages.map((message, index) =>
               message.role === "user" || message.role === "assistant" ? (
                 <div
                   key={index}
-                  className={`md:max-w-[900px] w-full flex ${
+                  ref={
+                    index === messages.length - 1 ? messagesEndRef : undefined
+                  }
+                  className={`md:max-w-[900px] w-full flex message${
                     message.role === "user"
-                      ? "message user justify-end"
-                      : "message assistant justify-start"
+                      ? " user justify-end items-start "
+                      : " assistant justify-start items-start"
+                  } ${
+                    index === messages.length - 1 ? "min-h-full" : ""
                   }`}
+
+                  id={index === messages.length - 1 ? "last-message" : ""}
                 >
                   <div
-                    className={`${
+                    className={`message-content m-5  ${
                       message.role === "user"
-                        ? "max-w-[70%] flex items-end self-end"
+                        ? "max-w-[70%] flex items-end self-start"
                         : "w-full"
-                    } rounded-lg p-4 ${
+                    } rounded-3xl pt-2 pb-2 pl-4 pr-4 ${
                       message.role === "user"
                         ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                        : "bg-white dark:bg-gray-800 shadow-sm"
+                        : "bg-transparent"
                     } break-words overflow-hidden`}
                   >
                     {message.role === "user" ? (
@@ -604,13 +515,9 @@ function ChatWindow() {
                         {message.content as string}
                       </div>
                     ) : (
-                      <ReactMarkdown
-                        components={{
-                          pre: CustomPre,
-                        }}
-                        children={message.content as string}
-                        remarkPlugins={[remarkGfm, remarkBreaks, supersub]}
-                        rehypePlugins={[]}
+                      <AssistantMessageRenderer
+                        fullContent={message.content as string}
+                        gettingResponse={gettingResponse}
                       />
                     )}
                   </div>
@@ -619,18 +526,18 @@ function ChatWindow() {
             )}
             {messages.length > 0 &&
               messages[messages.length - 1].role === "tool_call" && (
-                <div className="md:max-w-[900px] w-full flex justify-start">
+                <div className="md:max-w-[900px] w-full flex justify-start min-h-full">
                   <span className="wave-text">
-                    {(messages[messages.length - 1].content as {name: string}).name as string || "Processing..."}
+                    {((
+                      messages[messages.length - 1].content as { name: string }
+                    ).name as string) || "Processing..."}
                   </span>
                 </div>
               )}
-              {messages.length > 0 &&
+            {messages.length > 0 &&
               messages[messages.length - 1].role === "tool_result" && (
-                <div className="md:max-w-[900px] w-full flex justify-start">
-                  <span className="wave-text">
-                    processing...
-                  </span>
+                <div className="md:max-w-[900px] w-full flex justify-start min-h-full">
+                  <span className="wave-text">processing...</span>
                 </div>
               )}
             <style>
@@ -661,8 +568,26 @@ function ChatWindow() {
                   color: transparent;
                   animation: continuous-wave-forward-smooth 5s infinite linear;
                 }
+
+                @keyframes fadeIn {
+                  from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+
+                .message {
+                  animation: fadeIn 0.3s ease-out forwards;
+                }
+
+                .message-content {
+                  animation: fadeIn 0.3s ease-out forwards;
+                }
               `}
-              
             </style>
             <div ref={messagesEndRef} />
           </div>

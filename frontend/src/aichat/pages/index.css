@@ -513,4 +513,29 @@ body.dark .Chat-Container .token.entity {
 body.dark .Chat-Container pre[class*=language-] {
   margin: 0;
   border-radius: var(--radius);
+}
+
+@keyframes fadeInChunk {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in-chunk {
+  display: inline;
+  animation: fadeInChunk 0.5s ease-out forwards;
+}
+
+@keyframes fadeInLatestChunk {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.streaming-word-fade-in {
+  animation: fadeInLatestChunk 0.55s ease-out forwards;
 }/*# sourceMappingURL=index.css.map */
