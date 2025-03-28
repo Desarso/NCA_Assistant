@@ -4,15 +4,32 @@ from typing import AsyncGenerator, List, Union
 from fastapi import APIRouter, Depends, HTTPException, Request
 from requests import Session
 
-from custom.messages import FunctionToolCallEvent, FunctionToolResultEvent, ModelMessage, ModelRequest, ModelResponse, PartDeltaEvent, PartStartEvent, ReasoningPart, ReasoningPartDelta, RetryPromptPart, SystemPromptPart, TextPart, TextPartDelta, ToolCallPart, ToolReturnPart, UserPromptPart
+from ai.Manager import MyDeps, create_agent, get_system_prompt
+from ai.assistant_functions.memory_functions import get_memory_no_context
+from custom.messages import (
+    FunctionToolCallEvent,
+    FunctionToolResultEvent,
+    ModelMessage,
+    ModelRequest,
+    ModelResponse,
+    PartDeltaEvent,
+    PartStartEvent,
+    ReasoningPart,
+    ReasoningPartDelta,
+    RetryPromptPart,
+    SystemPromptPart,
+    TextPart,
+    TextPartDelta,
+    ToolCallPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
 from helpers.helper_funcs import gemini
 from ai.models import get_session, User, Conversation, Message as DBMessage
 from models.general import ConversationCreate, MessageCreate
-from ai.Manager import agent
 from fastapi.responses import StreamingResponse
 
 chats_router = APIRouter(prefix="/chats")
-
 
 
 @chats_router.post("/chat")
@@ -21,7 +38,6 @@ async def chat(
     prompt: str,
     conversation_id: str,
     session: Session = Depends(get_session),
-
 ):
     current_user = request.state.user
     """
@@ -53,11 +69,23 @@ async def chat(
     # Get message history from the conversation
     message_history = get_message_history(conversation)
 
+    ##refresh system prompt
+    memory = get_memory_no_context(request.state.user.uid, prompt)
+    if len(message_history) > 0:
+        system_prompt = message_history[0].parts[0].content
+        if system_prompt:
+            message_history[0].parts[0].content = get_system_prompt(request.state.user, memory)
+
+
+    agent = create_agent(current_user, memory)
+
     async def generate_chunks() -> AsyncGenerator[
         str, None
     ]:  # Changed return type to str since we're yielding JSON strings
         async with agent.iter(
-            user_prompt=prompt, message_history=message_history
+            deps=MyDeps(user_object=current_user),
+            user_prompt=prompt,
+            message_history=message_history,
         ) as run:
             async for node in run:
                 # print("Node type:", type(node))
@@ -120,6 +148,12 @@ async def chat(
                 #     assert run.result.data == node.data.data
                 #     # Once an End node is reached, the agent run is complete
                 #     print(run.result, "\n")
+            # save run history to json file
+            # messages = run.result.all_messages_json().decode("utf-8")
+            # # print(messages)
+            # ##save to file
+            # with open("run_history.json", "w") as f:
+            #     f.write(messages)
 
     return StreamingResponse(
         generate_chunks(),
@@ -133,10 +167,11 @@ async def chat(
 
 
 @chats_router.post("/conversations/", response_model=dict)
-def create_conversation(   
+def create_conversation(
     request: Request,
     conversation: ConversationCreate,
-    session: Session = Depends(get_session)):
+    session: Session = Depends(get_session),
+):
     # Users can only create conversations for themselves
     current_user = request.state.user
     if conversation.user_id != current_user.uid:
@@ -249,22 +284,6 @@ def read_conversation_messages(
     return {"status": "success", "messages": conversation.messages}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def event_to_json_string(event):
     """Convert event objects to JSON string."""
     event_type = "part_start"
@@ -345,7 +364,10 @@ def event_to_dict(event):
         if isinstance(event.part, TextPart):
             return {
                 "index": event.index,
-                "part": {"content": event.part.content, "part_kind": event.part.part_kind}
+                "part": {
+                    "content": event.part.content,
+                    "part_kind": event.part.part_kind,
+                }
                 if event.part
                 else None,
                 "event_kind": event.event_kind,
@@ -353,14 +375,17 @@ def event_to_dict(event):
         elif isinstance(event.part, ReasoningPart):
             return {
                 "index": event.index,
-                "part": {"reasoning": event.part.reasoning, "part_kind": event.part.part_kind},
+                "part": {
+                    "reasoning": event.part.reasoning,
+                    "part_kind": event.part.part_kind,
+                },
                 "event_kind": event.event_kind,
             }
     elif isinstance(event, PartDeltaEvent):
         if isinstance(event.delta, TextPartDelta):
             return {
-                    "index": event.index,
-                    "delta": {
+                "index": event.index,
+                "delta": {
                     "content": event.delta.content_delta,
                     "part_kind": event.delta.part_delta_kind,
                 }
@@ -371,7 +396,10 @@ def event_to_dict(event):
         elif isinstance(event.delta, ReasoningPartDelta):
             return {
                 "index": event.index,
-                "delta": {"reasoning": event.delta.reasoning_delta, "part_kind": event.delta.part_delta_kind},
+                "delta": {
+                    "reasoning": event.delta.reasoning_delta,
+                    "part_kind": event.delta.part_delta_kind,
+                },
                 "event_kind": event.event_kind,
             }
     elif isinstance(event, FunctionToolCallEvent):
@@ -499,7 +527,7 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
         elif part_data["type"] == "ToolReturnPart":
             # print(part_data)
             # Save part_data to file for debugging
-            with open('part_data.json', 'w') as f:
+            with open("part_data.json", "w") as f:
                 json.dump(part_data, f, indent=2)
             parts.append(
                 ToolReturnPart(
@@ -515,9 +543,12 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
         return ModelResponse(
             parts=parts,
             model_name=data.get("model_name"),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else datetime.now(),
+            timestamp=datetime.fromisoformat(data["timestamp"])
+            if data.get("timestamp")
+            else datetime.now(),
             kind="response",
         )
+
 
 def get_message_history(conversation: Conversation) -> List[ModelMessage]:
     """Convert stored conversation messages into a list of ModelMessages for the model"""
@@ -537,5 +568,3 @@ def get_message_history(conversation: Conversation) -> List[ModelMessage]:
             continue
 
     return message_history
-
-

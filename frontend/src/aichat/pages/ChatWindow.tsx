@@ -70,7 +70,6 @@ const loadLanguage = async (language: string) => {
     }
     const scriptText = await response.text();
 
-
     // Execute the script.  Important: This is where the Prism component is registered.
     eval(scriptText); // VERY CAREFUL.  See security notes below.
 
@@ -174,9 +173,9 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
           const toolReturnPart = parsed.parts.find(
             (part: any) => part.type === "ToolReturnPart"
           );
-          if (toolReturnPart) {
+          if (1) {
             return {
-              role: "tool_response",
+              role: "tool_result",
               content: JSON.stringify(toolReturnPart.content),
             };
           }
@@ -197,7 +196,7 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
               result.content += part.content;
             }
             if (part.type === "ReasoningPart") {
-              result.reasoning += part.content
+              result.reasoning += part.content;
             }
             if (parsed.parts[0].type === "ToolCallPart") {
               return {
@@ -207,8 +206,7 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
             }
           }
 
-          return result;  
-          
+          return result;
         }
 
         return null;
@@ -221,18 +219,18 @@ function convertToChatMessages(messages: DBMessage[]): ChatMessage[] {
 }
 
 // Create a new ChatInput component
-const ChatInput = ({ 
-  onSubmit, 
-  gettingResponse, 
-  handleFileAttachment, 
-  setIsListening, 
-  handleStopRequest 
-}: { 
-  onSubmit: (text: string) => void,
-  gettingResponse: boolean,
-  handleFileAttachment: () => void,
-  setIsListening: (isListening: boolean) => void,
-  handleStopRequest: () => void
+const ChatInput = ({
+  onSubmit,
+  gettingResponse,
+  handleFileAttachment,
+  setIsListening,
+  handleStopRequest,
+}: {
+  onSubmit: (text: string) => void;
+  gettingResponse: boolean;
+  handleFileAttachment: () => void;
+  setIsListening: (isListening: boolean) => void;
+  handleStopRequest: () => void;
 }) => {
   const [input, setInput] = useState("");
 
@@ -270,11 +268,11 @@ const ChatInput = ({
             className="rounded-full p-2 text-red-600 bg-gray-100 hover:bg-gray-200 dark:text-red-400 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors min-w-[40px] flex items-center justify-center"
             onClick={handleStopRequest}
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
               fill="currentColor"
             >
               <rect x="6" y="6" width="12" height="12" />
@@ -332,14 +330,12 @@ function ChatWindow() {
 
       Prism.highlightAll();
     })();
-
-  }, [id])
-    
-
+  }, [id]);
 
   useEffect(() => {
     scrollToBottom();
     Prism.highlightAll();
+    console.log("messages", messages);
   }, [messages]);
 
   //   //when chats load set messages
@@ -352,10 +348,7 @@ function ChatWindow() {
     })();
   }, []);
 
-
-  
   const handleSubmit = async (text: string) => {
-
     if (gettingResponse) return;
 
     setGettingResponse(true);
@@ -399,15 +392,6 @@ function ChatWindow() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
-      let assistantMessage: Message = {
-        role: "assistant",
-        content: "",
-        reasoning: "",
-      };
-      // Update the messages array with the assistant message
-      const newMessages = [...updatedMessages, assistantMessage];
-      messages.push(assistantMessage);
-
       let buffer = "";
 
       while (true) {
@@ -426,6 +410,21 @@ function ChatWindow() {
         const lines = buffer.split("\n\n");
         buffer = lines.pop() || ""; // Keep the last incomplete chunk in the buffer
 
+        let newAssistantMessage = {
+          role: "assistant",
+          content: "",
+          reasoning: "",
+        };
+        let newToolCallMessage = {
+          role: "tool_call",
+          content: "",
+        };
+
+        let newToolResultMessage = {
+          role: "tool_result",
+          content: "",
+        };
+
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             try {
@@ -433,31 +432,40 @@ function ChatWindow() {
               const data = JSON.parse(jsonString);
               // console.log("data:", data);
               // console.log("event kind:", data.type);
-              // console.log("data.data:", data.data.part.part_kind);
+              console.log("data.type:", data.type);
               if (data.type === "part_start") {
-                  // console.log("Part start:", data);
-                  if (data.data.part.part_kind === "text") {
-                    messages[messages.length - 1].content += data.data.part.content;
-                    // console.log("Text part:", data.data.part.content);
-                  } else if (data.data.part.part_kind === "reasoning") {
-                    messages[messages.length - 1].reasoning += data.data.part.reasoning;
-                    // console.log("Reasoning part:", data.data.part.reasoning);
-                  }
+                //if it's a part start we can create a new message
+                //it it's start we push the new message to the messages
+                updatedMessages.push(newAssistantMessage);
+
+                if (data.data.part.part_kind === "text") {
+                  updatedMessages[updatedMessages.length - 1].content +=
+                    data.data.part.content;
+                  // console.log("Text part:", data.data.part.content);
+                } else if (data.data.part.part_kind === "reasoning") {
+                  updatedMessages[updatedMessages.length - 1].reasoning +=
+                    data.data.part.reasoning;
+                  // console.log("Reasoning part:", data.data.part.reasoning);
+                }
               } else if (data.type === "part_delta") {
                 if (data.data.delta.part_kind === "text") {
                   // console.log("Text delta:", data.data.delta.content);
-                  messages[messages.length - 1].content += data.data.delta.content;
+                  updatedMessages[updatedMessages.length - 1].content +=
+                    data.data.delta.content;
                 } else if (data.data.delta.part_kind === "reasoning") {
                   // console.log("Reasoning delta:", data.data.delta.reasoning);
-                  messages[messages.length - 1].reasoning += data.data.delta.reasoning;
+                  updatedMessages[updatedMessages.length - 1].reasoning +=
+                    data.data.delta.reasoning;
                 }
-                //await appendContentWithDelay(data.data.delta.content, newMessages);;
-                // setMessages([...messages]);
               } else if (data.type === "tool_call") {
-                console.log("Tool call:", data);
+                newToolCallMessage.content = data.data.tool_call; 
+                updatedMessages.push(newToolCallMessage);
+              } else if (data.type === "tool_result") {
+                newToolResultMessage.content = data.data.tool_result;
+                updatedMessages.push(newToolResultMessage);
               }
-
-              setMessages([...newMessages]); // Trigger re-render with the updated array
+              // console.log("newMessages", updatedMessages);
+              setMessages([...updatedMessages]); // Trigger re-render with the updated array
             } catch (e) {
               console.error("Error parsing JSON:", e);
             }
@@ -469,7 +477,6 @@ function ChatWindow() {
         window.history.pushState({}, "", `/chat/${conversationId}`);
         fetchConversations();
       }
-  
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -610,11 +617,58 @@ function ChatWindow() {
                 </div>
               ) : null
             )}
+            {messages.length > 0 &&
+              messages[messages.length - 1].role === "tool_call" && (
+                <div className="md:max-w-[900px] w-full flex justify-start">
+                  <span className="wave-text">
+                    {(messages[messages.length - 1].content as {name: string}).name as string || "Processing..."}
+                  </span>
+                </div>
+              )}
+              {messages.length > 0 &&
+              messages[messages.length - 1].role === "tool_result" && (
+                <div className="md:max-w-[900px] w-full flex justify-start">
+                  <span className="wave-text">
+                    processing...
+                  </span>
+                </div>
+              )}
+            <style>
+              {`
+                @keyframes continuous-wave-forward-smooth {
+                  0% {
+                    background-position: 0% 50%;
+                  }
+                  100% {
+                    background-position: -600% 50%;
+                  }
+                }
+                .wave-text {
+                  font-size: 1rem;
+                  font-weight: 500;
+                  color: gray;
+                  background: linear-gradient(
+                    90deg,
+                    gray 0%,
+                    gray 40%,
+                    black 50%,
+                    gray 60%,
+                    gray 100%
+                  );
+                  background-size: 300% 100%;
+                  background-clip: text;
+                  -webkit-background-clip: text;
+                  color: transparent;
+                  animation: continuous-wave-forward-smooth 5s infinite linear;
+                }
+              `}
+              
+            </style>
             <div ref={messagesEndRef} />
           </div>
 
           <div className="border-t md:border md:rounded-lg md:mb-4 md:shadow-md border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 w-full md:max-w-[900px]">
-            <ChatInput 
+            <ChatInput
               onSubmit={handleSubmit}
               gettingResponse={gettingResponse}
               handleFileAttachment={handleFileAttachment}

@@ -10,10 +10,12 @@ import AvatarDropdown from "./components/avatar-dropdown";
 interface Conversation {
   id: number;
   title: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface ChatContextType {
-  chats: { id: string; title: string }[];
+  chats: Conversation[];
   fetchConversations: () => Promise<void>;
 }
 
@@ -36,7 +38,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const HOST = import.meta.env.VITE_CHAT_HOST;
 
-  const [chats, setChats] = useState<{id: string, title: string}[]>([]);
+  const [chats, setChats] = useState<Conversation[]>([]);
 
   
   const fetchConversations = async () => {
@@ -57,11 +59,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
+      // console.log(data);
       if (data.status === "success" && Array.isArray(data.conversations)) {
-        setChats(data.conversations.map((conv: Conversation) => ({
-          id: conv.id.toString(),
-          title: conv.title
-        })));
+        setChats(data.conversations
+          .map((conv: Conversation) => ({
+            id: conv.id.toString(),
+            title: conv.title,
+            created_at: conv.created_at,
+            updated_at: conv.updated_at
+          }))
+          .sort((a: { created_at: Date }, b: { created_at: Date }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        );
       }
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
@@ -72,6 +80,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   
     fetchConversations();
   }, []);
+
+
+  useEffect(() => {
+    console.log(chats);
+  }, [chats]);
     
   return (
     <ChatContext.Provider value={{ chats, fetchConversations }}>

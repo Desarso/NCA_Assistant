@@ -4,34 +4,34 @@
     "name": "tavily_search",
     "content": [
       {
-        "title": "SolidJS",
-        "url": "https://www.solidjs.com/",
-        "content": "Solid is a purely reactive library. It was designed from the ground up with a reactive core. It's influenced by reactive principles developed by previous libraries.",
-        "score": 0.8808076
+        "title": "Microsoft Graph API UnknownError with 429 code and ... - Stack Overflow",
+        "url": "https://stackoverflow.com/questions/53631098/microsoft-graph-api-unknownerror-with-429-code-and-retry-after-of-86-seconds",
+        "content": "That appears to be what their documentation recommends: Microsoft Graph throttling guidance. Per their documentation: Whenever the throttling threshold is exceeded, Microsoft Graph responds with a response similar to this one. HTTP. Copy HTTP/1.1 429 Too Many Requests Content-Type: application/json Retry-After: 2.128",
+        "score": 0.7608822
       },
       {
-        "title": "What is SolidJS? Understanding the Modern Reactive Library",
-        "url": "https://www.wisp.blog/blog/what-is-solidjs-understanding-the-modern-reactive-library",
-        "content": "SolidJS: SolidJS introduces reactive primitives such as createSignal for state management and createEffect for side effects. These primitives are designed to be more intuitive and efficient, automatically tracking dependencies and optimizing updates without additional effort from developers.",
-        "score": 0.8657814
+        "title": "Graph API 429 Errors /detectedApps | Microsoft Community Hub",
+        "url": "https://techcommunity.microsoft.com/discussions/officegraph/graph-api-429-errors-detectedapps/4023283",
+        "content": "I am getting 429 error when calling the following endpointIs there a different rate limits for /detectedApps?I called 80 GET api's in approx 20 seconds, so i",
+        "score": 0.6675167
       },
       {
-        "title": "Solid Docs",
-        "url": "https://docs.solidjs.com/",
-        "content": "Documentation for SolidJS, the signals-powered UI framework. Advantages of using Solid. Performant: Fine-grained reactivity allows Solid to update only what has changed, resulting in faster load times and smoother performance overall.. Powerful: Using less memory and processing power, Solid is capable of creating complex applications without compromising on functionality.",
-        "score": 0.70214266
+        "title": "How to generate 429 - activityLimitReached error using Graph API for ...",
+        "url": "https://learn.microsoft.com/en-us/answers/questions/917890/how-to-generate-429-activitylimitreached-error-usi",
+        "content": "SharePoint: A group of Microsoft Products and technologies used for sharing and managing content, knowledge, and applications. Development: The process of researching, productizing, and refining new or existing technologies.",
+        "score": 0.6180666
       },
       {
-        "title": "What is Solid JS? - Medium",
-        "url": "https://medium.com/eincode/what-is-solid-js-e32f03048936",
-        "content": "www.solidjs.com. The website contains basic to advance tutorials with practical examples. It also lists full API docs to get information about all features of Solid JS.",
-        "score": 0.6778372
+        "title": "Microsoft Graph error responses and resource types",
+        "url": "https://learn.microsoft.com/en-us/graph/errors",
+        "content": "Microsoft Graph error responses and resource types - Microsoft Graph | Microsoft Learn Microsoft Graph error responses and resource types Errors in Microsoft Graph are returned using standard HTTP status codes, and a JSON error response object. When handling errors, your code shouldn't take any dependency on the message property values because they can change at any time, and they often contain dynamic information specific to the failed request. It will guide you with hands-on exercises on how to use Microsoft Graph API requests to start developing or enhancing your applications with Microsoft 365 data. It will guide you with hands-on exercises on how to use Microsoft Graph API requests to start developing or enhancing your applications with Microsoft 365 data.",
+        "score": 0.4513029
       },
       {
-        "title": "SolidJS vs. React: The Go-to Guide - Toptal",
-        "url": "https://www.toptal.com/react/solidjs-vs-react",
-        "content": "In SolidJS, this concept is known as signal, and its corresponding creation function is createSignal. States and signals house component data (in the form of props), enabling the framework to track value changes. And when the framework detects a change, the component is rendered with the according value(s).",
-        "score": 0.6519982
+        "title": "Microsoft Graph throttling guidance",
+        "url": "https://learn.microsoft.com/en-us/graph/throttling",
+        "content": "The Microsoft Graph service implements throttling limits to ensure service availability and reliability. Throttling limits vary based on the scenario. For example, if you're performing a large volume of writes, the possibility for throttling is higher than if you're only performing reads.",
+        "score": 0.20827588
       }
     ],
     "tool_call_id": null

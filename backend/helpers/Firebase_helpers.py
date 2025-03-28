@@ -10,10 +10,11 @@ from fastapi import Depends, Request
 security = HTTPBearer()
 
 class FirebaseUser:
-    def __init__(self, uid: str, email: str, roles: List[str]):
+    def __init__(self, uid: str, email: str, roles: List[str], name: str):
         self.uid = uid
         self.email = email
         self.roles = roles
+        self.name = name
 
 class Token(BaseModel):
     access_token: str
@@ -40,13 +41,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
         
         # Check email
         email = user.email if user.email else decoded_token.get('email', '')
+        name = user.display_name if user.display_name else decoded_token.get('name', '')
         
         # Get custom claims
         custom_claims = user.custom_claims or {}
         roles = custom_claims.get('roles', [])
-        
         # Create user object
-        firebase_user = FirebaseUser(uid=uid, email=email, roles=roles)
+        firebase_user = FirebaseUser(uid=uid, email=email, roles=roles, name=name)
 
         print(firebase_user)
         

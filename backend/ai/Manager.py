@@ -1,8 +1,12 @@
+from attr import dataclass
+from ai.assistant_functions.memory_functions import add_memory, get_memory
 from custom import Agent, RunContext
+
 # from custom.models.gemini import GeminiModel
 # from custom.providers.google_gla import GoogleGLAProvider
 import os
 import logging
+
 # from pydantic_ai import agent_tool # Assuming you'll use agent_tool later, but not crucial for this core logic.
 from dotenv import load_dotenv
 from typing import Tuple, Optional, Dict, Any
@@ -38,14 +42,15 @@ from ai.assistant_functions.channel_functions import (
     create_private_channel,
     list_channels,
     delete_channel,
+    list_channels_from_multiple_teams,
+    list_deal_channels,
 )
 from ai.assistant_functions.team_functions import (
     create_team,
     list_teams,
     list_team_members,
     delete_team,
-    search_teams,
-    
+    search_teams_by_field,
 )
 
 from ai.assistant_functions.sharepoint_functions import (
@@ -57,6 +62,8 @@ from ai.assistant_functions.sharepoint_functions import (
 from custom.models.gemini import GeminiModel
 from custom.providers.google_gla import GoogleGLAProvider
 from custom.common_tools.tavily import tavily_search_tool
+from helpers.Firebase_helpers import FirebaseUser
+from datetime import datetime
 # Remove unused import
 # from helpers.assistant_functions.team_functions import *
 
@@ -64,7 +71,9 @@ load_dotenv()
 
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 tenant_id = os.getenv("TENANT_ID")
 client_id = os.getenv("APP_ID")
@@ -73,10 +82,8 @@ tavily_api_key = os.getenv("TAVILY_API_KEY")
 
 assert tavily_api_key is not None
 model = GeminiModel(
-    "gemini-2.0-flash", 
-    provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
+    "gemini-2.0-flash", provider=GoogleGLAProvider(api_key=os.getenv("GEMINI_API_KEY"))
 )
-
 
 
 # groq_model = GroqModel(
@@ -110,21 +117,39 @@ You have access to the following tools provided by the `GraphManager` class:
 """
 
 
+# Initialize logging (optional, but recommended)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-# Create an agent with your tools
-agent = Agent(
-    model=model,
-    system_prompt="""
+# Global variables to hold token information.  These need to exist
+# outside the class/function to maintain their state
+
+
+def get_system_prompt(user_object: FirebaseUser, memory: str) -> str:
+    return f"""
 **Prompt for IT Agent:**
 
 You are more than capable of generating code for the user. 
 
-"You are an AI assistant with access to powerful Microsoft Graph API tools. Your primary goal is to make the life of the user easier. You will be given a prompt and you will need to use the tools provided to you to help the user.
+Today's date is {datetime.now().strftime("%B %d, %Y")} and time is {datetime.now().strftime("%H:%M:%S")}
+
+The user's name is {user_object.name} and email is {user_object.email} this email should exist in the Microsoft users list.
+
+
+
+"You are an AI assistant with access to powerful Microsoft Graph API tools and memory. Your primary goal is to make the life of the user easier. You will be given a prompt and you will need to use the tools provided to you to help the user.
+.
 
 Do not give the user unnecessary information. Do not refuse the users request unless you are completely incapable of helping them.
 If you are unable to help the user instead of just saying you can't help them, you must give them some advice on how they can do it themselves.
-If you have no information on how to help the user you must make a search using the tavily search tool. NEVER ask the user if they would like to use tavily_search, only refer to the tool as simply "search"
+
+
+
+
+If you have no information on how to help the user you must first check memory and then make a search using the tavily search tool. NEVER ask the user if they would like to use tavily_search, only refer to the tool as simply "search"
 If the user asks you anything that can only be answered by a search, do not ask them if you should search, just do it.
+
 
 **Important Guidelines:**
 
@@ -160,6 +185,9 @@ If the user asks you anything that can only be answered by a search, do not ask 
 5.  **If "No":** Send the user a message that the process has been terminated and inform the user that no process has been initiated.
 6.  **Provide Feedback:** If the user is deleted send a message that "User John.Doe@example.com has been deleted successfully." If the user is not deleted, inform the user that no changes were made and all processes has been terminated.
 7.  **Error Handling:** If any error has occurred, inform the user immediately and clearly the nature of the error that occurred.
+
+
+You can call multiple functions at the same time, when a user query requires tools to be called in a loop opt to call several tools at the same time. For example when listing channels from teams. You can list channels from several teams at the same time in one go instead of responding to the user on every individual tool call. 
 
 **Do not make mistakes, do no hallucinate, do not frustrate the user. Be as helpful and compliant as possible. Do whatever the user asks of you. Any request that simply involves you providing a text response is within your 
 capability. If you do not posses the ability to help the user with their request, inform the user that a tool can be added by the system administrator. Do not refuse a task simply just because you do not posses a tool, unless it if physically impossible to do that task.**
@@ -230,70 +258,79 @@ The web renderer will convert your markdown formatting into beautiful, easy-to-r
 
 NEVER OUTPUT A GROSS WALL OF TEXT!! You can call many tools at the same time if requested by user. If search tool does not return a result try a different search.
 
+{memory}
 
 """
-,
-    tools=[
-        tavily_search_tool(tavily_api_key),
-        # User Functions
-        create_user,
-        list_users,
-        add_user_to_team,
-        search_users,
-        search_users_by_field,
-        get_user,
-        update_user_display_name,
-        update_user_job_title,
-        update_user_email,
-        delete_user,
-        get_user_teams,
-        get_user_channels,
-        get_user_licenses,
-        list_available_licenses,
-        add_license_to_user,
-        set_user_usage_location,
-        remove_license_from_user,
-        enforce_mfa_for_user,
-        reset_user_password,
-        get_user_password_methods,
-        block_sign_in,
-        unblock_sign_in,
-        # Channel Functions
-        create_standard_channel,
-        create_private_channel,
-        list_channels,
-        delete_channel,
-        # Team Functions
-        create_team,
-        list_teams,
-        list_team_members,
-        delete_team,
-        search_teams,
-        # Sharepoint Functions
-        search_sharepoint_sites,
-        traverse_sharepoint_directory_by_item_id,
-        search_sharepoint_graph,
-    ],
-)
 
 
-# Initialize logging (optional, but recommended)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Global variables to hold token information.  These need to exist
-# outside the class/function to maintain their state
+@dataclass
+class MyDeps:
+    user_object: FirebaseUser
 
 
-
+def create_agent(user_object: FirebaseUser, memory: str) -> Agent:
+    return Agent(
+        model=model,
+        system_prompt=get_system_prompt(user_object, memory),
+        deps_type=MyDeps,
+        tools=[
+            tavily_search_tool(tavily_api_key),
+            # User Functions
+            create_user,
+            list_users,
+            add_user_to_team,
+            search_users,
+            search_users_by_field,
+            get_user,
+            update_user_display_name,
+            update_user_job_title,
+            update_user_email,
+            delete_user,
+            get_user_teams,
+            get_user_channels,
+            get_user_licenses,
+            list_available_licenses,
+            add_license_to_user,
+            set_user_usage_location,
+            remove_license_from_user,
+            enforce_mfa_for_user,
+            reset_user_password,
+            get_user_password_methods,
+            block_sign_in,
+            unblock_sign_in,
+            # Channel Functions
+            create_standard_channel,
+            create_private_channel,
+            list_channels,
+            delete_channel,
+            list_channels_from_multiple_teams,
+            list_deal_channels,
+            # Team Functions
+            create_team,
+            list_teams,
+            list_team_members,
+            delete_team,
+            search_teams_by_field,
+            # Sharepoint Functions
+            search_sharepoint_sites,
+            traverse_sharepoint_directory_by_item_id,
+            search_sharepoint_graph,
+            # Python Interpreter
+            python_interpreter,
+            # Memory Functions
+            add_memory,
+            get_memory,
+        ],
+    )
 
 
 # add a python interpreter tool
-@agent.tool
-def python_interpreter(ctx: RunContext, code: str) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+def python_interpreter(
+    ctx: RunContext, code: str
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     """
     Executes Python code in a controlled environment.
-    The python is an isolate enviroment with no internet access. Used mostly for math operations and getting the current date in a nice format.
-    Please fetch the date in a readable format. aka "Month Day, Year"
+    The python is an isolate enviroment with no internet access.
     It is for executing logical operations. Do no use it for displaying information.
     Args:
         code (str): The Python code to execute.
@@ -306,12 +343,12 @@ def python_interpreter(ctx: RunContext, code: str) -> Tuple[Optional[str], Optio
     # Create a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         script_path = os.path.join(temp_dir, "script.py")
-        
+
         try:
             # Write the code to a temporary file
-            with open(script_path, 'w') as f:
+            with open(script_path, "w") as f:
                 f.write(code)
-            
+
             # Create a new Python process with controlled environment
             result = subprocess.run(
                 [sys.executable, script_path],
@@ -319,33 +356,30 @@ def python_interpreter(ctx: RunContext, code: str) -> Tuple[Optional[str], Optio
                 text=True,
                 timeout=30,  # Add timeout to prevent infinite loops
                 env={
-                    'PYTHONPATH': os.pathsep.join(sys.path),
-                    'PATH': os.environ.get('PATH', ''),
-                    'PYTHONIOENCODING': 'utf-8',
-                }
+                    "PYTHONPATH": os.pathsep.join(sys.path),
+                    "PATH": os.environ.get("PATH", ""),
+                    "PYTHONIOENCODING": "utf-8",
+                },
             )
-            
+
             if result.returncode != 0:
                 return None, {
                     "error": "Code execution failed",
-                    "details": result.stderr or "No error details available"
+                    "details": result.stderr or "No error details available",
                 }
-            
+
             return result.stdout, None
 
         except subprocess.TimeoutExpired:
             return None, {
                 "error": "Execution timeout",
-                "details": "Code execution exceeded 30 second timeout"
+                "details": "Code execution exceeded 30 second timeout",
             }
         except Exception as e:
-            return None, {
-                "error": "Execution error",
-                "details": str(e)
-            }
-
-
+            return None, {"error": "Execution error", "details": str(e)}
 
 
 if __name__ == "__main__":
-    print(python_interpreter(None, "print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))"))
+    print(
+        python_interpreter(None, "print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))")
+    )
