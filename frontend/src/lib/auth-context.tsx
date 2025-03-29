@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         try {
           // Get the ID token with fresh claims
-          const idTokenResult = await user.getIdTokenResult(true);
+          // const idTokenResult = await user.getIdTokenResult(true);
 
           // console.log("idTokenResult", idTokenResult);
 

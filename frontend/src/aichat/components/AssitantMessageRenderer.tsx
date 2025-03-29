@@ -1,13 +1,10 @@
-// src/components/AssistantMessageRenderer.tsx
-import React, {
-  useState,
-  useEffect,
+
+import {
   useRef,
   memo,
   useLayoutEffect,
 } from "react";
 import ReactMarkdown from "react-markdown";
-import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import supersub from "remark-supersub";
@@ -19,11 +16,6 @@ import { visit, SKIP } from "unist-util-visit";
 import type { Plugin } from 'unified';
 import type { Root, Element, Text } from 'hast';
 
-
-interface Chunk {
-  id: number;
-  text: string;
-}
 
 interface AssistantMessageProps {
   fullContent: string;
@@ -91,7 +83,6 @@ const rehypeWrapWordsInSpans: Plugin<[], Root> = () => {
 const AssistantMessageRenderer = memo(
   ({ fullContent, gettingResponse }: AssistantMessageProps) => {
     // State for the content already rendered structurally soundly
-    const [parts, setParts] = useState<string[]>([]);
 
     const containerRef = useRef<HTMLDivElement>(null);
 

@@ -1,9 +1,5 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
-import ReactMarkdown from "react-markdown";
 import WaveIcon from "./WaveIcon";
-import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
-import supersub from "remark-supersub";
 
 import Prism from "prismjs";
 import "./index.css";
