@@ -1,3 +1,4 @@
+from ai.utils import extract_and_format_memory_data
 from custom.tools import RunContext
 from typing import Tuple
 from dotenv import load_dotenv
@@ -53,7 +54,10 @@ def get_memory(ctx: RunContext[str], query: str) -> Tuple[str, str]:
         return "Memory service unavailable.", "Memory service is not initialized."
     try:
         results = m.search(query, user_id=ctx.deps.user_object.uid)
-        return "Memory search completed successfully.", str(results)
+
+        memory = extract_and_format_memory_data(str(results))
+
+        return "Memory search completed successfully.", memory
     except Exception as e:
         logger.error(f"Error searching memory: {str(e)}", exc_info=True)
         return "Failed to search memory.", str(e)
@@ -77,7 +81,12 @@ def get_memory_no_context(user_id: str, query: str) -> Tuple[str, str]:
         return "Memory service unavailable.", "Memory service is not initialized."
     try:
         results = m.search(query, user_id=user_id)
-        return "Memory from current question.", str(results)
+
+        # print("results", results)
+
+
+        memory = extract_and_format_memory_data(str(results))
+        return "Memory from current question.", memory
     except Exception as e:
         logger.error(f"Error searching memory: {str(e)}", exc_info=True)
         return "Failed to search memory.", str(e)

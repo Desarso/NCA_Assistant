@@ -72,13 +72,16 @@ async def chat(
     ##refresh system prompt
     memory = get_memory_no_context(request.state.user.uid, prompt)
 
-    print("memory", memory)
+    # print("memory", memory[1])
+
+    # save memory to file
 
     if len(message_history) > 0:
         system_prompt = message_history[0].parts[0].content
         if system_prompt:
-            message_history[0].parts[0].content = get_system_prompt(request.state.user, memory)
-
+            message_history[0].parts[0].content = get_system_prompt(
+                request.state.user, memory
+            )
 
     agent = create_agent(current_user, memory)
 
@@ -91,7 +94,7 @@ async def chat(
             message_history=message_history,
         ) as run:
             async for node in run:
-                # print("Node type:", type(node))
+                print("Node type:", type(node))
                 # print("node", node, "\n")
                 if agent.is_user_prompt_node(node):
                     # print("here",node.request, "\n")
@@ -146,17 +149,6 @@ async def chat(
 
                     session.add(db_message)
                     session.commit()
-                    # print(node.model_response, "\n")
-                # elif Agent.is_end_node(node):
-                #     assert run.result.data == node.data.data
-                #     # Once an End node is reached, the agent run is complete
-                #     print(run.result, "\n")
-            # save run history to json file
-            # messages = run.result.all_messages_json().decode("utf-8")
-            # # print(messages)
-            # ##save to file
-            # with open("run_history.json", "w") as f:
-            #     f.write(messages)
 
     return StreamingResponse(
         generate_chunks(),
@@ -528,10 +520,6 @@ def dict_to_model_message(data: dict) -> Union[ModelRequest, ModelResponse]:
                 )
             )
         elif part_data["type"] == "ToolReturnPart":
-            # print(part_data)
-            # Save part_data to file for debugging
-            with open("part_data.json", "w") as f:
-                json.dump(part_data, f, indent=2)
             parts.append(
                 ToolReturnPart(
                     tool_name=part_data["content"].get("name"),

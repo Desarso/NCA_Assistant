@@ -1,6 +1,5 @@
 import logging
 import time
-import json
 from typing import Any, Dict, List, Optional, Tuple
 
 from custom import RunContext
@@ -38,13 +37,6 @@ def _list_sharepoint_sites(ctx: RunContext) -> Tuple[Optional[List[Dict[str, Any
 
         logging.info(f"Successfully retrieved {len(all_sites)} sites")
 
-        # Save sites to JSON for easier debugging
-        try:
-            with open('sharepoint_sites.json', 'w') as f:
-                json.dump(all_sites, f, indent=4)
-            logging.info("Successfully saved sites to sharepoint_sites.json")
-        except Exception as e:
-            logging.warning(f"Failed to save sites to JSON: {e}")
         return all_sites, None
 
     except Exception as e:
@@ -85,12 +77,6 @@ def search_sharepoint_sites(ctx: RunContext, search_term: str) -> List[Dict[str,
         if search_term_lower in name or search_term_lower in display_name:
             matching_sites.append(site)
 
-    #save matching sites to json
-    try:
-        with open('matching_sites.json', 'w') as f:
-            json.dump(matching_sites, f, indent=4)
-    except Exception as e:
-        logging.warning(f"Failed to save sites to JSON: {e}")
 
     return matching_sites
 
